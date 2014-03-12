@@ -1,0 +1,804 @@
+package dbStats.databases.MySQL;
+import java.io.File;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.logging.Level;
+
+import com.mysql.jdbc.DatabaseMetaData;
+
+import cpw.mods.fml.common.Loader;
+import cpw.mods.fml.common.ModClassLoader;
+import dbStats.Config;
+import dbStats.DbStats;
+import dbStats.API.Column;
+import dbStats.API.Column.ColumnType;
+import dbStats.API.Table;
+import dbStats.API.Statistics.Statistic;
+import dbStats.Util.ErrorUtil;
+import dbStats.Util.Utilities;
+import dbStats.databases.IDatabaseHandler;
+
+public class MysqlHandler implements IDatabaseHandler {
+	
+	public final static String type = "MySQL";
+	private final boolean isReady;
+	
+	private static Connection con = null;
+	public MysqlHandler()
+	{
+		boolean ready = false;
+		
+		try {
+			loadDriver();
+			Connection connection = DriverManager.getConnection("jdbc:mysql://" + Config.serverAddress + ":" + Config.serverPort, Config.db_userName, Config.db_password);
+			
+			if (connection != null)
+			{
+				ready = true;
+				connection.close();
+			}
+			else
+			{
+				DbStats.log.log(Level.SEVERE, "Failed to obtain a connection to the server");
+				ready = false;
+			}
+		} catch (SQLException e) {
+			DbStats.log.log(Level.SEVERE, "Failed to load mysql jdbc driver. " + e.getMessage());
+			ready = false;
+		}
+		
+		isReady = ready;
+	}
+	
+	private void loadDriver() throws SQLException
+	{
+		try {
+			//Load the driver into the classpath first
+			ModClassLoader loader = (ModClassLoader) Loader.instance().getModClassLoader();
+			loader.addFile(new File(new File(".").getCanonicalPath() + "/libs/mysql-connector-java.jar"));
+		}
+		catch (Exception ex)
+		{
+			throw new SQLException(ex.getMessage());
+		}
+		
+		try {
+			Class.forName("com.mysql.jdbc.Driver").newInstance();
+		}
+		catch (Exception ex) {
+			throw new SQLException(ex.getMessage());
+		}
+	}
+	
+	public boolean IsReady()
+	{
+		return isReady;
+	}
+
+	@Override
+	public void connect() {
+		try {
+			con = DriverManager.getConnection("jdbc:mysql://" + Config.serverAddress + ":" + Config.serverPort + "/" 
+					+ Config.databaseName + "?allowMultiQueries=true&user=" + Config.db_userName + "&password=" + Config.db_password);
+		} catch(SQLException ex)
+		{
+			DbStats.log.log(Level.SEVERE, "Failed to connect: " + ex.getMessage());
+			con = null;
+		}
+	}
+
+	@Override
+	public void disconnect() {
+		if (con != null)
+			try {
+				con.close();
+				con = null;
+			} catch (SQLException e) {
+				DbStats.log.log(Level.SEVERE, e.getMessage());
+			}
+	}
+
+	@Override
+	public boolean isConnceted() {
+		if (con != null)
+        {
+            try {
+                con.createStatement().executeQuery("SELECT 1 as db_connection_test");
+            }
+            catch (SQLException ex)
+            {
+                ErrorUtil.LogWarning("Possible Mysql connection timeout detected, attempting reconnect");
+                disconnect();
+                connect();
+            }
+
+            return true;
+        }
+		
+		return false;
+	}
+	
+	@Override
+	public boolean checkDatabase() {
+		//Check database exists, if not add it
+		try {
+			Connection connection = DriverManager.getConnection("jdbc:mysql://" + Config.serverAddress + ":" + Config.serverPort, Config.db_userName, Config.db_password);
+		
+			DatabaseMetaData metadata = (DatabaseMetaData) connection.getMetaData();
+			
+			ResultSet resultSet;
+			resultSet = metadata.getCatalogs();
+			boolean dbExists = false;
+			String databaseName = Config.databaseName;
+			
+			while(resultSet.next())
+			{
+				if (resultSet.getString(1).equals(databaseName))
+				{
+					dbExists = true;
+					break;
+				}
+			}
+			
+			if (!dbExists)
+			{
+				con = connection;
+				ErrorUtil.LogMessage(databaseName + " database not found. Attempting to create...");
+				String create = "CREATE DATABASE `" + databaseName + "` DEFAULT CHARACTER SET latin1 COLLATE latin1_swedish_ci;";
+				QueryResult qr = executeQuery(create, false);
+				if (qr != null &&  !qr.hadResults)
+				{
+					ErrorUtil.LogMessage(databaseName + " database created.");
+					dbExists = true;
+				}
+				else
+				{
+					ErrorUtil.LogWarning(databaseName + " database failed to create!");
+				}
+			}
+			
+			connect();
+			
+			if (dbExists)
+			{
+				for(Table table : tables)
+				{
+					resultSet = metadata.getTables(databaseName, null, table.tableName, null);
+					if(resultSet.next())
+					{
+						ErrorUtil.LogMessage(table.tableName + " table found, checking columns.");
+						for(Column c : table.columns)
+						{
+							resultSet = metadata.getColumns(databaseName, null, table.tableName, c.name);
+							if(!resultSet.next())
+							{
+								ErrorUtil.LogMessage(table.tableName + "-" + c.name + " column missing, attempting database restructure.");
+								String rename = "RENAME TABLE `" + table.tableName + "` TO `" + table.tableName + "_old`;";
+								if (!executeQuery(rename, false).hadResults)
+								{
+									executeQuery(generateTableConstructionString(table), false);
+									String insert = "INSERT INTO `" + table.tableName + "` SELECT * FROM `" + table.tableName + "_old`";
+									QueryResult qr = executeQuery(insert, true);
+									if (qr.hadResults)	//Insert returns nothing
+									{
+										ErrorUtil.LogMessage(table.tableName + " failed to update!");
+										return false;
+									}
+									else
+									{
+										ErrorUtil.LogMessage(table.tableName + " updated. " + qr.returnedValue);
+										String drop = "DROP TABLE `" + table.tableName + "_old`";
+										executeQuery(drop, false);
+									}
+								}
+							}
+							else
+							{
+								// Compare current column setting with database one, if something has changed we need to alter table...
+								// TODO : Primary/Unique key change, will need to copy entire database and create a new one, copying valuesback
+								ColumnType columnType = Utilities.GetDatabaseColumnType(resultSet.getString("TYPE_NAME").toLowerCase(), "mysql");
+								int columnSize = resultSet.getInt("COLUMN_SIZE");
+								String columnDefault = resultSet.getString("COLUMN_DEF");
+								if (columnDefault == null && Utilities.IsColumnTypeNumerical(columnType) && !c.autoIncrement)
+								{
+									columnDefault = "0";
+								}
+								else if (columnDefault == null)
+								{
+									columnDefault = "";
+								}
+								
+								if (columnType != c.type)
+								{
+									ErrorUtil.LogMessage(c.name + " - Column type mismatch " + columnType + " != " + Utilities.GetDatabaseColumnType(c.type, "mysql") + ". Attempting column modify");
+									if (!ModifyColumn(table, c))
+									{
+										return false;
+									}
+								}
+								else if (c.type == ColumnType.VARCHAR && c.dataSize != columnSize)
+								{
+									ErrorUtil.LogMessage(c.name + " - Column size mismatch " + columnSize + " != " + c.dataSize + ". Attempting column modify");
+									if (!ModifyColumn(table, c))
+									{
+										return false;
+									}
+								}
+								else if (!c.defaultValue.equals(columnDefault))
+								{
+									ErrorUtil.LogMessage(c.name + " - Column default mismatch " + columnDefault + " != " + c.defaultValue + ". Attempting column modify");
+									if (!ModifyColumn(table, c))
+									{
+										return false;
+									}
+								}
+							}
+						}
+					}
+					else
+					{
+						ErrorUtil.LogMessage(table.tableName + " table not found! Attempting to insert.");
+						if (!executeQuery(generateTableConstructionString(table), false).hadResults)
+						{
+							ErrorUtil.LogMessage(table.tableName + " table created.");
+						}
+						else
+						{
+							return false;
+						}
+					}
+				}
+			}
+			
+			disconnect();
+			connection.close();
+		} catch (SQLException e) {
+			ErrorUtil.LogWarning(e.getMessage());
+			return false;
+		}
+		
+		return true;
+	}
+	
+	private boolean ModifyColumn(Table t, Column c)
+	{
+		String query = generateAlterTable(t, c);
+		if (!executeQuery(query, false).hadResults)
+		{
+			ErrorUtil.LogMessage("Succesfully modified column");
+			return true;
+		}
+		
+		return false;
+	}
+	
+	@Override
+	public boolean checkForPlayer(String playerName) {
+		
+		boolean found = false;
+		String query = "SELECT * FROM players WHERE `playername` = '" + playerName + "'";
+		QueryResult result = executeQuery(query, true);
+		
+		if (result != null && result.rs != null)
+		{
+			try {
+				while (result.rs.next() && !found)
+				{
+					if (result.rs.getString("playername").equals(playerName)) {
+						found = true;
+					}
+				}
+			} catch (SQLException e) { }
+		}
+		
+		cleanupQuery(result);
+				
+		return found;
+	}
+	
+	public int getPlayerId(String playerName)
+	{
+		int id = 0;
+		String query = "SELECT * FROM players WHERE `playername` = '" + playerName + "'";
+		QueryResult result = executeQuery(query, true);
+		
+		if (result != null && result.rs != null)
+		{
+			try {
+				while (result.rs.next() && id == 0)
+				{
+					if (result.rs.getString("playername").equals(playerName)) {
+						id = result.rs.getInt("playerid");
+					}
+				}
+			} catch (SQLException e) { }
+		}
+		
+		cleanupQuery(result);
+		
+		return id;
+	}
+	
+	private class QueryResult {
+		Statement stmt;
+		ResultSet rs;
+		boolean hadResults = false;
+		int returnedValue = -1;
+		
+		public QueryResult(Statement stmt, ResultSet rs) {
+			this.stmt = stmt;
+			this.rs = rs;
+		}
+	}
+	
+	private QueryResult executeQuery(String query, boolean expectResults)
+	{
+		if (!isConnceted()) connect();	//Connect if not connected!
+		
+		DbStats.errorUtil.LogSqlStatment(query);
+		
+		try {
+			Statement stmt = null;
+			ResultSet rs = null;
+			
+			stmt = con.createStatement();
+			boolean hadResults = stmt.execute(query); 
+			
+			if (hadResults) rs = stmt.getResultSet();
+			
+			QueryResult qr = new QueryResult(stmt, rs);
+			qr.hadResults = hadResults;
+			
+			if (!expectResults)
+			{
+				qr.returnedValue = stmt.getUpdateCount();
+			}
+			
+			return qr;
+		} catch(SQLException ex){
+			DbStats.log.log(Level.SEVERE, "SQLException: " + ex.getMessage());
+			return null;
+		}
+	}
+	
+	private int executeUpdate(String query)
+	{
+		if (!isConnceted()) connect();	//Connect if not connected!
+		
+		DbStats.errorUtil.LogSqlStatment(query);
+		
+		try {
+			Statement stmt = null;
+			
+			stmt = con.createStatement();
+			int result = stmt.executeUpdate(query);
+			
+			return result;
+		} catch(SQLException ex){
+			DbStats.log.log(Level.SEVERE, "SQLException: " + ex.getMessage());
+			return 0;
+		}
+	}
+	
+	private void cleanupQuery(QueryResult qr)
+	{
+		if (qr != null) {
+			if (qr.rs != null)
+			{
+				try {
+					qr.rs.close();
+				} catch (SQLException e) { }
+				
+				qr.rs = null;
+			}
+			
+			if (qr.stmt != null) {
+				try {
+					qr.stmt.close();
+				} catch (SQLException e) { }
+				
+				qr.stmt = null;
+			}
+		}
+	}
+
+	@Override
+	public boolean upsertStatistic(Statistic statistic) {
+		String query = "";
+		
+		ErrorUtil.LogMessage("Upserting individual stat, " + statistic.key);
+		
+//		if (statistic.type == StatType.Player)
+//		{
+//			PlayerStatistic stat = (PlayerStatistic)statistic;
+//			
+//			if (stat.AddToPrev)
+//				query = MySQLQueries.UpdatePlayerStat.query;
+//			else
+//				query = MySQLQueries.SetPlayerStat.query;
+//			
+//			query = query.replace("@Column", stat.TableColumn.column);
+//			query = query.replace("@Player", stat.PlayerName);
+//			query = query.replace("@Amount", stat.Amount);
+//		}
+//		
+//		if (statistic.type == StatType.Block)
+//		{
+//			BlockStatistic stat = (BlockStatistic)statistic;
+//			
+//			query = MySQLQueries.UpdateBlockStat.query;
+//			
+//			if (stat.TableColumn.table == TableUtil.BrokenBlocks_BlockId.table)
+//			{
+//				query = query.replace("@Table", TableUtil.BrokenBlocks_BlockId.table);
+//				query = query.replace("@PlayerIdColumn", TableUtil.BrokenBlocks_PlayerId.column);
+//				query = query.replace("@BlockIdColumn", TableUtil.BrokenBlocks_BlockId.column);
+//				query = query.replace("@BlockMetaColumn", TableUtil.BrokenBlocks_BlockMeta.column);
+//				query = query.replace("@NoBlocksColumn", TableUtil.BrokenBlocks_NoBlocksBroken.column);
+//			}
+//			
+//			query = query.replace("@Player", stat.PlayerName);
+//			query = query.replace("@BlockId", stat.BlockID);
+//			query = query.replace("@BlockMeta", stat.BlockMeta);
+//			query = query.replace("@Amount", Integer.toString(stat.Amount));
+//		}
+//		
+//		if (statistic.type == StatType.Distance)
+//		{
+//			DistanceStatistic stat = (DistanceStatistic)statistic;
+//			
+//			query = MySQLQueries.UpdateDistanceStat.query;
+//			
+//			query = query.replace("@Player", stat.PlayerName);
+//			query = query.replace("@DistanceColumn", stat.TableColumn.column);
+//			query = query.replace("@Distance", Double.toString(stat.distance));
+//		}
+		
+		if (executeUpdate(query) > 0)
+			return true;
+		
+		return false;
+	}
+
+	@Override
+	public boolean insertNewPlayer(String playerName) {
+		StringBuilder sb = new StringBuilder();
+		
+		sb.append("INSERT INTO players (`playername`,`firstseen`,`logins`) VALUES('" + playerName + "','");
+		sb.append(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(System.currentTimeMillis()));
+		sb.append("', '1')");
+		
+		if (executeQuery(sb.toString(), false).returnedValue >= 0)
+			return true;
+		
+		return false;
+	}
+	
+	//This groups all similar stats into single queries and executes them
+	//@return - All stats that were not grouped
+	public ArrayList<Statistic> GroupStatsIntoSingleQueriesAndExecute(ArrayList<Statistic> stats)
+	{
+		ArrayList<Statistic> remainingStats = new ArrayList<Statistic>();
+		
+		ArrayList<ArrayList<Statistic>> statLists = new ArrayList<ArrayList<Statistic>>();
+		
+//		DbStats.errorUtil.LogMessage(stats.toString());
+		
+		while(!stats.isEmpty())
+		{
+			boolean found = false;
+			
+			for(ArrayList<Statistic> gStat : statLists)
+			{
+				Statistic stat = stats.get(0);
+				if (stat.key.equals(gStat.get(0).key) && stat.playerName.equals(gStat.get(0).playerName))
+				{
+					gStat.add(stat);
+					stats.remove(stats.get(0));
+					found = true;
+					break;
+				}
+			}
+			
+			if (!found)
+			{
+				ArrayList<Statistic> newList = new ArrayList<Statistic>();
+				newList.add(stats.get(0));
+				statLists.add(newList);
+				stats.remove(stats.get(0));
+			}
+		}
+		
+//		DbStats.errorUtil.LogMessage(statLists.toString());
+		
+		for(ArrayList<Statistic> gStat : statLists)
+		{
+//			DbStats.errorUtil.LogMessage(gStat.toString());
+			StringBuilder sb = new StringBuilder();
+			Statistic currentStat = gStat.get(0);
+			
+			if (currentStat.usePlayerId)
+			{
+				sb.append("SET @pId = (SELECT ID FROM players WHERE PlayerName='" + currentStat.playerName + "');");
+			}
+			
+			if (currentStat.insertStat && currentStat.updateStat)
+			{
+				sb.append("INSERT INTO " + currentStat.table + " (");
+				
+				//Produce a string of columns that will be updated
+				ArrayList<String> columnNames = new ArrayList<String>();
+				for(Statistic stat : gStat)
+				{
+					if (!columnNames.contains(stat.column) && !stat.insertsAllColumns)
+						columnNames.add(stat.column);
+				}
+				
+				String columnToUpdate = "";
+				//If columns are blank.. use all columns for that table!
+				if (columnNames.isEmpty() && gStat.get(0).insertsAllColumns)
+				{
+					for(Table table : tables)
+					{
+						if (table.tableName.equals(gStat.get(0).table))
+						{
+							for(Column columns : table.columns)
+							{
+								columnNames.add(columns.name);
+							}
+							columnToUpdate = table.GetUpdateString();
+						}
+					}
+				}
+				
+				if (columnNames.size() <= 0)
+				{
+					ErrorUtil.LogWarning("Table name not found - " + currentStat.table);
+				}
+				
+				//Create the columns tag
+				for(String columnName : columnNames)
+				{
+					sb.append("`" + columnName + "`,");
+				}
+				sb.deleteCharAt(sb.length()-1);
+				
+				sb.append(") VALUES");
+				
+//				Now create a list of values to insert
+				StringBuilder values = new StringBuilder();
+				for(Statistic stat : gStat)
+				{
+					if (stat.insertsAllColumns)
+					{
+						values.append("(" + stat.GetSQLValueForInsertion() + ")");
+						values.append(",");
+					}
+				}
+				values.deleteCharAt(values.length() - 1);
+				
+				sb.append(values.toString());
+				sb.append(" ON DUPLICATE KEY UPDATE ");
+				sb.append("" + columnToUpdate + "=");
+				if (gStat.get(0).addToCurrent)
+				{
+					sb.append(columnToUpdate + "+");
+				}
+				sb.append("VALUES(" + columnToUpdate + ")");
+				sb.append(";");
+				
+				executeQuery(sb.toString(), false);
+			}
+			else if (currentStat.insertStat)
+			{
+				sb.append("INSERT INTO " + currentStat.table + " (");
+				
+				//Produce a string of columns that will be updated
+				ArrayList<String> columnNames = new ArrayList<String>();
+				for(Statistic stat : gStat)
+				{
+					if (!columnNames.contains(stat.column) && !stat.insertsAllColumns)
+						columnNames.add(stat.column);
+				}
+				
+				//If columns are blank.. use all columns for that table!
+				if (columnNames.isEmpty() && gStat.get(0).insertsAllColumns)
+				{
+					for(Table table : tables)
+					{
+						if (table.tableName.equals(gStat.get(0).table))
+						{
+							for(Column columns : table.columns)
+							{
+								columnNames.add(columns.name);
+							}
+							table.GetUpdateString();
+						}
+					}
+				}
+				
+				//Create the columns tag
+				for(String columnName : columnNames)
+				{
+					sb.append("`" + columnName + "`,");
+				}
+				sb.deleteCharAt(sb.length()-1);
+				
+				sb.append(") VALUES");
+				
+//				Now create a list of values to insert
+				StringBuilder values = new StringBuilder();
+				for(Statistic stat : gStat)
+				{
+					if (stat.insertsAllColumns)
+					{
+						values.append("(" + stat.GetSQLValueForInsertion() + ")");
+						values.append(",");
+					}
+				}
+				values.deleteCharAt(values.length() - 1);
+				
+				sb.append(values.toString() + ";");
+				
+				executeQuery(sb.toString(), false);
+			}
+			else if (currentStat.updateStat)
+			{
+				sb.append("UPDATE " + currentStat.table + " SET ");
+				
+				for(Statistic stat : gStat)
+				{
+					sb.append(stat.column + "=");
+					if (stat.addToCurrent)
+					{
+						sb.append(stat.column + "+");
+					}
+					sb.append("'" + stat.GetValue() + "'");
+					sb.append(",");
+				}
+				sb.deleteCharAt(sb.length() - 1);	//Delete last ,
+				
+				if (!gStat.get(0).usePlayerId)
+				{
+					sb.append(" WHERE PlayerName='" + currentStat.playerName + "'");
+				}
+				else
+				{
+					sb.append(" WHERE playerid=@pId");
+				}
+				
+				executeQuery(sb.toString(), false);
+			}
+		}
+		
+		return remainingStats;
+	}
+
+	
+	@Override
+	public boolean registerTable(Table table) {
+		if (tables.contains(table))
+		{
+			DbStats.log.log(Level.WARNING, "Table already exists for - " + table.tableName);
+			return false;
+		}
+		else
+		{
+			tables.add(table);
+			return true;
+		}
+	}
+
+	private String generateAlterTable(Table table, Column column)
+	{
+		StringBuilder sb = new StringBuilder();
+		
+		sb.append("ALTER TABLE " + table.tableName);
+		sb.append(" MODIFY COLUMN ");
+		sb.append(generateColumnDefString(column));
+		
+		return sb.toString();
+	}
+	
+	private String generateColumnDefString(Column c)
+	{
+		StringBuilder sb = new StringBuilder();
+		
+		sb.append("`" + c.name + "`");
+		sb.append(" " + Utilities.GetDatabaseColumnType(c.type, "mysql"));
+		if (c.type == ColumnType.VARCHAR)
+		{
+			sb.append("(" + Integer.toString(c.dataSize) + ")");
+		}
+		
+		if (!c.allowNull) { sb.append(" NOT NULL"); }
+		if (!c.defaultValue.isEmpty() && !c.defaultValue.equals("CURRENT_TIMESTAMP")) { sb.append(" DEFAULT '" + c.defaultValue + "'"); }
+		if (c.defaultValue.equals("CURRENT_TIMESTAMP")) { sb.append(" DEFAULT CURRENT_TIMESTAMP"); }
+		if (c.autoIncrement) { sb.append(" AUTO_INCREMENT"); }
+		
+		return sb.toString();
+	}
+
+	@Override
+	public String generateTableConstructionString(Table table) {
+		StringBuilder sb = new StringBuilder();
+
+		String pKeys = "";
+		String uKeys = "";
+		
+		sb.append("CREATE TABLE IF NOT EXISTS `");
+		sb.append(table.tableName);
+		sb.append("` (");
+		for(Column c : table.columns)
+		{
+			sb.append(generateColumnDefString(c));
+//			sb.append("`" + c.name + "`");
+//			sb.append(" " + Utilities.GetDatabaseColumnType(c.type, "mysql"));
+//			if (c.type == ColumnType.VARCHAR)
+//			{
+//				sb.append("(" + Integer.toString(c.dataSize) + ")");
+//			}
+//			
+//			if (!c.allowNull) { sb.append(" NOT NULL"); }
+//			if (!c.defaultValue.isEmpty() && !c.defaultValue.equals("CURRENT_TIMESTAMP")) { sb.append(" DEFAULT '" + c.defaultValue + "'"); }
+//			if (c.defaultValue.equals("CURRENT_TIMESTAMP")) { sb.append(" DEFAULT CURRENT_TIMESTAMP"); }
+//			if (c.autoIncrement) { sb.append(" AUTO_INCREMENT"); }
+			
+			if (c.primaryKey) {
+				if (pKeys.length() > 0) { pKeys += ","; }
+				pKeys += "`" + c.name + "`"; 
+			}
+			if (c.uniqueKey) {
+				if (uKeys.length() > 0) { uKeys += ","; }
+				uKeys += "`" + c.name + "`";
+			}
+			
+			sb.append(",");
+		}
+		
+		if (pKeys.length() > 0)
+		{
+			sb.append(" PRIMARY KEY (" + pKeys + "),");
+		}
+		if (uKeys.length() > 0)
+		{
+			sb.append(" UNIQUE KEY `uniqueKey` (" + uKeys + "),");
+		}
+		
+		sb.deleteCharAt(sb.length()-1);	//Remove the last ,
+		sb.append(")");
+		sb.append(" ENGINE=InnoDB DEFAULT CHARSET=latin1;");
+		
+		return sb.toString();
+	}
+
+	@Override
+	public void deleteAllTableInfo(Table table) {
+		if (table == null)
+			return;
+		
+		StringBuilder sb = new StringBuilder();
+		
+		sb.append("DELETE FROM " + table.tableName);
+		
+		executeQuery(sb.toString(), false);
+	}
+
+	@Override
+	public Table findTableByName(String name) {
+		for(Table table : tables)
+		{
+			if (table.tableName.equals(name.toLowerCase()))
+			{
+				return table;
+			}
+		}
+		
+		return null;
+	}
+}

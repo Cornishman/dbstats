@@ -1,0 +1,20 @@
+[
+    {
+    "modid": "DbStats",
+    "name": "DbStats",
+    "description": "A mod that keeps track of detailed statistics about players actions within minecraft and stores the information within a database.",
+    "version": "0.0.1",
+    "mcversion": "1.6.4",
+    "url": "",
+    "updateUrl": "",
+    "authors": [ "wattzy" ],
+    "credits": "Authored by wattzy",
+    "logoFile": "",
+    "screenshots": [ ],
+    "parent": "",
+    "requiredMods": [ "Forge", "DbStatsCore" ],
+    "dependencies": [ "DbStatsCore" ],
+    "dependants": [ ],
+    "useDependencyInformation": "true"
+    }
+]
