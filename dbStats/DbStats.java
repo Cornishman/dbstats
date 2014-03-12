@@ -12,6 +12,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.StatCollector;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidRegistry;
@@ -136,7 +137,7 @@ public class DbStats {
 	public void serverStarting(FMLServerStartingEvent event)
 	{
 		server = event.getServer();
-		
+
 		RegisterCommands(event);
 		
 		if (server.getEntityWorld().isRemote)
@@ -330,7 +331,7 @@ public class DbStats {
 		}
 	}
 	
-	private void RegisterCommands(FMLServerStartingEvent event)
+	private static void RegisterCommands(FMLServerStartingEvent event)
 	{
 		event.registerServerCommand(new CommandSlotDebug());
 		event.registerServerCommand(new CommandConfig());
@@ -375,7 +376,7 @@ public class DbStats {
 					}
 					ArrayList<String> unlocalizedNames = new ArrayList<String>(16);
 					unlocalizedNames.add(is.getUnlocalizedName());
-					MinecraftForge.EVENT_BUS.post(new EStatistic(new DatabaseItem(is.itemID, 0, is.getDisplayName(), is.getUnlocalizedName(), modId)));
+					MinecraftForge.EVENT_BUS.post(new EStatistic(new DatabaseItem(is.itemID, 0, StatCollector.translateToLocal(is.getUnlocalizedName() + ".name"), is.getUnlocalizedName(), modId)));
 					
 					for(int j = 1; j < 16; j++)
 					{
@@ -384,7 +385,7 @@ public class DbStats {
 							if (is.getUnlocalizedName() != null && !unlocalizedNames.contains(is.getUnlocalizedName()))
 							{
 								unlocalizedNames.add(is.getUnlocalizedName());
-								MinecraftForge.EVENT_BUS.post(new EStatistic(new DatabaseItem(is.itemID, j, is.getDisplayName(), is.getUnlocalizedName(), modId)));
+								MinecraftForge.EVENT_BUS.post(new EStatistic(new DatabaseItem(is.itemID, j, StatCollector.translateToLocal(is.getUnlocalizedName() + ".name"), is.getUnlocalizedName(), modId)));
 							}
 						} catch(Exception ex)
 						{
@@ -397,7 +398,7 @@ public class DbStats {
 				else
 				{
 					try {
-						MinecraftForge.EVENT_BUS.post(new EStatistic(new DatabaseItem(is.itemID, 0, is.getDisplayName(), is.getUnlocalizedName(), modId)));
+						MinecraftForge.EVENT_BUS.post(new EStatistic(new DatabaseItem(is.itemID, 0, StatCollector.translateToLocal(is.getUnlocalizedName() + ".name"), is.getUnlocalizedName(), modId)));
 					} catch (Exception ex)
 					{
 						ErrorUtil.LogException("Error thrown on itemId Dump (" + i + ") - ", ex);
