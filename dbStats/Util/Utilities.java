@@ -1,12 +1,11 @@
 package dbStats.Util;
 
-import java.math.BigDecimal;
-import java.util.ArrayList;
-
+import dbStats.API.Column.ColumnType;
+import dbStats.Config;
+import dbStats.DbStats;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityAgeable;
 import net.minecraft.entity.monster.EntityCreeper;
-import net.minecraft.entity.monster.EntityMagmaCube;
 import net.minecraft.entity.monster.EntitySkeleton;
 import net.minecraft.entity.monster.EntitySlime;
 import net.minecraft.entity.monster.EntityZombie;
@@ -16,10 +15,11 @@ import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
+import net.minecraft.util.StatCollector;
 import net.minecraft.world.WorldServer;
-import dbStats.Config;
-import dbStats.DbStats;
-import dbStats.API.Column.ColumnType;
+
+import java.math.BigDecimal;
+import java.util.ArrayList;
 
 public class Utilities {
 	public static double Round(double unrounded, int precision)
@@ -37,7 +37,7 @@ public class Utilities {
 	
 	public static boolean CanTrackPlayer(EntityPlayer player)
 	{
-		return !(player instanceof EntityPlayerMP) ? false : !Config.trackCreativeModeStats && player.capabilities.isCreativeMode ? false : true;
+		return player instanceof EntityPlayerMP && (!(!Config.trackCreativeModeStats && player.capabilities.isCreativeMode));
 	}
 	
 	public static boolean CanTrackPlayer(String playerName)
@@ -46,7 +46,7 @@ public class Utilities {
 		{
 			for (Object player : server.playerEntities)
 			{
-				if (((EntityPlayer)player).username == playerName)
+				if (((EntityPlayer) player).username.equals(playerName))
 				{
 					return CanTrackPlayer((EntityPlayer)player);
 				}
@@ -151,7 +151,7 @@ public class Utilities {
 			return mobName;
 		}
 		
-		if (entity instanceof EntitySlime || entity instanceof EntityMagmaCube)
+		if (entity instanceof EntitySlime)
 		{
 			mobName += ((EntitySlime)entity).getSlimeSize();
 			
@@ -162,13 +162,11 @@ public class Utilities {
 		{
 			if (((EntityAgeable)entity).isChild())
 				mobName = "Baby" + mobName;
-			
-			return mobName;
-		}
-		
-		if (entity instanceof EntityHorse)
-		{
-			mobName += ((EntityHorse)entity).getOwnerName(); 
+
+            if (entity instanceof EntityHorse)
+            {
+                mobName += ((EntityHorse)entity).getOwnerName();
+            }
 			
 			return mobName;
 		}
@@ -219,12 +217,12 @@ public class Utilities {
 	
 	public static boolean IsThisSlotCrafting(int block, int meta, int slot)
 	{
-		return Config.craftingSlotIndentities.get(block + ":" + meta) != null ? Config.craftingSlotIndentities.get(block + ":" + meta).contains(slot) : false;
+		return Config.craftingSlotIndentities.get(block + ":" + meta) != null && Config.craftingSlotIndentities.get(block + ":" + meta).contains(slot);
 	}
 	
 	public static boolean IsThisSlotSmelting(int block, int meta, int slot)
 	{
-		return Config.smeltingSlotIdentities.get(block + ":" + meta) != null ? Config.smeltingSlotIdentities.get(block + ":" + meta).contains(slot) : false;
+		return Config.smeltingSlotIdentities.get(block + ":" + meta) != null && Config.smeltingSlotIdentities.get(block + ":" + meta).contains(slot);
 	}
 	
 	public static void AddPlayerToSlotDebugList(String player)
@@ -250,7 +248,7 @@ public class Utilities {
 	
 	public static boolean PlayerExistsInSlotDebugginList(String player)
 	{
-		return DbStats.playersForSlotDebug != null ? DbStats.playersForSlotDebug.contains(player) : false;
+		return DbStats.playersForSlotDebug != null && DbStats.playersForSlotDebug.contains(player);
 	}
 	
 	public static void AddPlayerToNBTDebugList(String player)
@@ -276,6 +274,21 @@ public class Utilities {
 	
 	public static boolean PlayerExistsInNBTDebugList(String player)
 	{
-		return DbStats.playersForNBTDebug != null ? DbStats.playersForNBTDebug.contains(player) : false;
+		return DbStats.playersForNBTDebug != null && DbStats.playersForNBTDebug.contains(player);
 	}
+
+    public static String GetLocalisedItemName(ItemStack itemStack)
+    {
+        String name;
+
+        try {
+            name = itemStack.getDisplayName();
+        }
+        catch (Exception ex)
+        {
+            name = StatCollector.translateToLocal(itemStack.getUnlocalizedName() + ".name");
+        }
+
+        return name;
+    }
 }

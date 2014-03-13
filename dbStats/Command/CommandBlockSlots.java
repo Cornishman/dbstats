@@ -18,8 +18,7 @@ public class CommandBlockSlots extends Command {
 		if (astring.length <= 1)
 		{
 			showUsage(icommandsender);
-			return;
-		}
+        }
 		else
 		{
 			switch(astring[0].toLowerCase())

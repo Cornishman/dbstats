@@ -3,8 +3,8 @@ package dbStats.API;
 public class Column {
 	
 	public enum ColumnType {
-		INT, VARCHAR, TIMESTAMP, FLOAT, BOOLEAN;
-	}
+		INT, VARCHAR, TIMESTAMP, FLOAT, BOOLEAN
+    }
 	
 	public final boolean allowNull;
 	public final ColumnType type;

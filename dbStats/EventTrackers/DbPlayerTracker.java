@@ -20,7 +20,7 @@ import dbStats.Util.Utilities;
 
 public class DbPlayerTracker implements IPlayerTracker {
 	
-	public ArrayList<PlaytimeUpdate> playerPlaytimeUpdaters;
+	public final ArrayList<PlaytimeUpdate> playerPlaytimeUpdaters;
 	
 	private class PlaytimeUpdate implements Runnable {
 		private final String playerName;
@@ -60,7 +60,7 @@ public class DbPlayerTracker implements IPlayerTracker {
 					Iterator<Entry<String, Double>> it = distances.entrySet().iterator();
 					while(it.hasNext())
 					{
-						Map.Entry<String, Double> distance = (Map.Entry<String, Double>)it.next();
+						Map.Entry<String, Double> distance = it.next();
 						upsertDistanceStatistic(distance.getKey(), distance.getValue(), playerName);
 						it.remove();
 					}
@@ -90,7 +90,8 @@ public class DbPlayerTracker implements IPlayerTracker {
 	private void removePlayerPlaytimeUpdate(String player)
 	{
 		//Find the matching player playTime updater and disable it
-		for(PlaytimeUpdate update : playerPlaytimeUpdaters)
+        //noinspection LoopStatementThatDoesntLoop
+        for(PlaytimeUpdate update : playerPlaytimeUpdaters)
 		{
 			if (update.playerName.equals(player))
 			{
@@ -166,7 +167,7 @@ public class DbPlayerTracker implements IPlayerTracker {
 
 	@Override
 	public void onPlayerChangedDimension(EntityPlayer player) {
-		if (Utilities.CanTrackPlayer((EntityPlayer) player))
+		if (Utilities.CanTrackPlayer(player))
 		{
 			MinecraftForge.EVENT_BUS.post(new EStatistic(new PlayerStatistic("players", "DimensionTeleports", player.username, 1, true)));
 		}

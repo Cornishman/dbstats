@@ -31,7 +31,7 @@ public class MysqlHandler implements IDatabaseHandler {
 	private static Connection con = null;
 	public MysqlHandler()
 	{
-		boolean ready = false;
+		boolean ready;
 		
 		try {
 			loadDriver();
@@ -343,7 +343,7 @@ public class MysqlHandler implements IDatabaseHandler {
 		DbStats.errorUtil.LogSqlStatment(query);
 		
 		try {
-			Statement stmt = null;
+			Statement stmt;
 			ResultSet rs = null;
 			
 			stmt = con.createStatement();
@@ -373,12 +373,11 @@ public class MysqlHandler implements IDatabaseHandler {
 		DbStats.errorUtil.LogSqlStatment(query);
 		
 		try {
-			Statement stmt = null;
+			Statement stmt;
 			
 			stmt = con.createStatement();
-			int result = stmt.executeUpdate(query);
-			
-			return result;
+
+            return stmt.executeUpdate(query);
 		} catch(SQLException ex){
 			DbStats.log.log(Level.SEVERE, "SQLException: " + ex.getMessage());
 			return 0;
@@ -458,26 +457,16 @@ public class MysqlHandler implements IDatabaseHandler {
 //			query = query.replace("@DistanceColumn", stat.TableColumn.column);
 //			query = query.replace("@Distance", Double.toString(stat.distance));
 //		}
-		
-		if (executeUpdate(query) > 0)
-			return true;
-		
-		return false;
-	}
+
+        return executeUpdate(query) > 0;
+
+    }
 
 	@Override
 	public boolean insertNewPlayer(String playerName) {
-		StringBuilder sb = new StringBuilder();
-		
-		sb.append("INSERT INTO players (`playername`,`firstseen`,`logins`) VALUES('" + playerName + "','");
-		sb.append(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(System.currentTimeMillis()));
-		sb.append("', '1')");
-		
-		if (executeQuery(sb.toString(), false).returnedValue >= 0)
-			return true;
-		
-		return false;
-	}
+
+        return executeQuery(("INSERT INTO players (`playername`,`firstseen`,`logins`) VALUES('" + playerName + "','") + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(System.currentTimeMillis()) + "', '1')", false).returnedValue >= 0;
+    }
 	
 	//This groups all similar stats into single queries and executes them
 	//@return - All stats that were not grouped
@@ -524,12 +513,12 @@ public class MysqlHandler implements IDatabaseHandler {
 			
 			if (currentStat.usePlayerId)
 			{
-				sb.append("SET @pId = (SELECT ID FROM players WHERE PlayerName='" + currentStat.playerName + "');");
+				sb.append("SET @pId = (SELECT ID FROM players WHERE PlayerName='").append(currentStat.playerName).append("');");
 			}
 			
 			if (currentStat.insertStat && currentStat.updateStat)
 			{
-				sb.append("INSERT INTO " + currentStat.table + " (");
+				sb.append("INSERT INTO ").append(currentStat.table).append(" (");
 				
 				//Produce a string of columns that will be updated
 				ArrayList<String> columnNames = new ArrayList<String>();
@@ -564,7 +553,7 @@ public class MysqlHandler implements IDatabaseHandler {
 				//Create the columns tag
 				for(String columnName : columnNames)
 				{
-					sb.append("`" + columnName + "`,");
+					sb.append("`").append(columnName).append("`,");
 				}
 				sb.deleteCharAt(sb.length()-1);
 				
@@ -576,7 +565,7 @@ public class MysqlHandler implements IDatabaseHandler {
 				{
 					if (stat.insertsAllColumns)
 					{
-						values.append("(" + stat.GetSQLValueForInsertion() + ")");
+						values.append("(").append(stat.GetSQLValueForInsertion()).append(")");
 						values.append(",");
 					}
 				}
@@ -584,19 +573,19 @@ public class MysqlHandler implements IDatabaseHandler {
 				
 				sb.append(values.toString());
 				sb.append(" ON DUPLICATE KEY UPDATE ");
-				sb.append("" + columnToUpdate + "=");
+				sb.append("").append(columnToUpdate).append("=");
 				if (gStat.get(0).addToCurrent)
 				{
-					sb.append(columnToUpdate + "+");
+					sb.append(columnToUpdate).append("+");
 				}
-				sb.append("VALUES(" + columnToUpdate + ")");
+				sb.append("VALUES(").append(columnToUpdate).append(")");
 				sb.append(";");
 				
 				executeQuery(sb.toString(), false);
 			}
 			else if (currentStat.insertStat)
 			{
-				sb.append("INSERT INTO " + currentStat.table + " (");
+				sb.append("INSERT INTO ").append(currentStat.table).append(" (");
 				
 				//Produce a string of columns that will be updated
 				ArrayList<String> columnNames = new ArrayList<String>();
@@ -625,7 +614,7 @@ public class MysqlHandler implements IDatabaseHandler {
 				//Create the columns tag
 				for(String columnName : columnNames)
 				{
-					sb.append("`" + columnName + "`,");
+					sb.append("`").append(columnName).append("`,");
 				}
 				sb.deleteCharAt(sb.length()-1);
 				
@@ -637,35 +626,35 @@ public class MysqlHandler implements IDatabaseHandler {
 				{
 					if (stat.insertsAllColumns)
 					{
-						values.append("(" + stat.GetSQLValueForInsertion() + ")");
+						values.append("(").append(stat.GetSQLValueForInsertion()).append(")");
 						values.append(",");
 					}
 				}
 				values.deleteCharAt(values.length() - 1);
 				
-				sb.append(values.toString() + ";");
+				sb.append(values.toString()).append(";");
 				
 				executeQuery(sb.toString(), false);
 			}
 			else if (currentStat.updateStat)
 			{
-				sb.append("UPDATE " + currentStat.table + " SET ");
+				sb.append("UPDATE ").append(currentStat.table).append(" SET ");
 				
 				for(Statistic stat : gStat)
 				{
-					sb.append(stat.column + "=");
+					sb.append(stat.column).append("=");
 					if (stat.addToCurrent)
 					{
-						sb.append(stat.column + "+");
+						sb.append(stat.column).append("+");
 					}
-					sb.append("'" + stat.GetValue() + "'");
+					sb.append("'").append(stat.GetValue()).append("'");
 					sb.append(",");
 				}
 				sb.deleteCharAt(sb.length() - 1);	//Delete last ,
 				
 				if (!gStat.get(0).usePlayerId)
 				{
-					sb.append(" WHERE PlayerName='" + currentStat.playerName + "'");
+					sb.append(" WHERE PlayerName='").append(currentStat.playerName).append("'");
 				}
 				else
 				{
@@ -696,28 +685,23 @@ public class MysqlHandler implements IDatabaseHandler {
 
 	private String generateAlterTable(Table table, Column column)
 	{
-		StringBuilder sb = new StringBuilder();
-		
-		sb.append("ALTER TABLE " + table.tableName);
-		sb.append(" MODIFY COLUMN ");
-		sb.append(generateColumnDefString(column));
-		
-		return sb.toString();
+
+        return ("ALTER TABLE " + table.tableName) + " MODIFY COLUMN " + generateColumnDefString(column);
 	}
 	
 	private String generateColumnDefString(Column c)
 	{
 		StringBuilder sb = new StringBuilder();
 		
-		sb.append("`" + c.name + "`");
-		sb.append(" " + Utilities.GetDatabaseColumnType(c.type, "mysql"));
+		sb.append("`").append(c.name).append("`");
+		sb.append(" ").append(Utilities.GetDatabaseColumnType(c.type, "mysql"));
 		if (c.type == ColumnType.VARCHAR)
 		{
-			sb.append("(" + Integer.toString(c.dataSize) + ")");
+			sb.append("(").append(Integer.toString(c.dataSize)).append(")");
 		}
 		
 		if (!c.allowNull) { sb.append(" NOT NULL"); }
-		if (!c.defaultValue.isEmpty() && !c.defaultValue.equals("CURRENT_TIMESTAMP")) { sb.append(" DEFAULT '" + c.defaultValue + "'"); }
+		if (!c.defaultValue.isEmpty() && !c.defaultValue.equals("CURRENT_TIMESTAMP")) { sb.append(" DEFAULT '").append(c.defaultValue).append("'"); }
 		if (c.defaultValue.equals("CURRENT_TIMESTAMP")) { sb.append(" DEFAULT CURRENT_TIMESTAMP"); }
 		if (c.autoIncrement) { sb.append(" AUTO_INCREMENT"); }
 		
@@ -763,11 +747,11 @@ public class MysqlHandler implements IDatabaseHandler {
 		
 		if (pKeys.length() > 0)
 		{
-			sb.append(" PRIMARY KEY (" + pKeys + "),");
+			sb.append(" PRIMARY KEY (").append(pKeys).append("),");
 		}
 		if (uKeys.length() > 0)
 		{
-			sb.append(" UNIQUE KEY `uniqueKey` (" + uKeys + "),");
+			sb.append(" UNIQUE KEY `uniqueKey` (").append(uKeys).append("),");
 		}
 		
 		sb.deleteCharAt(sb.length()-1);	//Remove the last ,
@@ -781,12 +765,8 @@ public class MysqlHandler implements IDatabaseHandler {
 	public void deleteAllTableInfo(Table table) {
 		if (table == null)
 			return;
-		
-		StringBuilder sb = new StringBuilder();
-		
-		sb.append("DELETE FROM " + table.tableName);
-		
-		executeQuery(sb.toString(), false);
+
+        executeQuery(("DELETE FROM " + table.tableName), false);
 	}
 
 	@Override

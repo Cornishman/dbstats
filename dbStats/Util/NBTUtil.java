@@ -48,55 +48,55 @@ public class NBTUtil {
 			case "BYTE":
 				{
 					NBTTagByte castTag = (NBTTagByte)tag;
-					sb.append(prefix + castTag.getName() + " : " + castTag.data);
+					sb.append(prefix).append(castTag.getName()).append(" : ").append(castTag.data);
 				}
 				break;
 			case "SHORT":
 				{
 					NBTTagShort castTag = (NBTTagShort)tag;
-					sb.append(prefix + castTag.getName() + " : " + castTag.data);
+					sb.append(prefix).append(castTag.getName()).append(" : ").append(castTag.data);
 				}
 				break;
 			case "INT":
 				{
 					NBTTagInt castTag = (NBTTagInt)tag;
-					sb.append(prefix + castTag.getName() + " : " + castTag.data);
+					sb.append(prefix).append(castTag.getName()).append(" : ").append(castTag.data);
 				}
 				break;
 			case "LONG":
 				{
 					NBTTagLong castTag = (NBTTagLong)tag;
-					sb.append(prefix + castTag.getName() + " : " + castTag.data);
+					sb.append(prefix).append(castTag.getName()).append(" : ").append(castTag.data);
 				}
 				break;
 			case "FLOAT":
 				{
 					NBTTagFloat castTag = (NBTTagFloat)tag;
-					sb.append(prefix + castTag.getName() + " : " + castTag.data);
+					sb.append(prefix).append(castTag.getName()).append(" : ").append(castTag.data);
 				}
 				break;
 			case "DOUBLE":
 				{
 					NBTTagDouble castTag = (NBTTagDouble)tag;
-					sb.append(prefix + castTag.getName() + " : " + castTag.data);
+					sb.append(prefix).append(castTag.getName()).append(" : ").append(castTag.data);
 				}
 				break;
 			case "STRING":
 				{
 					NBTTagString castTag = (NBTTagString)tag;
-					sb.append(prefix + castTag.getName() + " : " + castTag.data);
+					sb.append(prefix).append(castTag.getName()).append(" : ").append(castTag.data);
 				}
 				break;
 			case "BYTE[]":
 				{
 					NBTTagByteArray castTag = (NBTTagByteArray)tag;
-					sb.append(prefix + castTag.getName() + " : " + castTag.byteArray.toString());
+					sb.append(prefix).append(castTag.getName()).append(" : ").append(castTag.byteArray.toString());
 				}
 				break;
 			case "INT[]":
 				{
 					NBTTagIntArray castTag = (NBTTagIntArray)tag;
-					sb.append(prefix + castTag.getName() + " : " + castTag.intArray.toString());
+					sb.append(prefix).append(castTag.getName()).append(" : ").append(castTag.intArray.toString());
 				}
 				break;
 			case "COMPOUND":
@@ -104,7 +104,7 @@ public class NBTUtil {
 					NBTTagCompound castTag = (NBTTagCompound)tag;
 					if (!castTag.getName().isEmpty())
 					{
-						sb.append(prefix + castTag.getName() + " : ");
+						sb.append(prefix).append(castTag.getName()).append(" : ");
 						sb.append("\n");
 					}
 					prefix += "-";
@@ -114,7 +114,7 @@ public class NBTUtil {
 						sb.append(returnedValue);
 //						sb.append("\n");
 //					}
-					prefix = prefix.substring(0, prefix.length() - 1);
+//					prefix = prefix.substring(0, prefix.length() - 1);
 				}
 				break;
 			case "LIST":
@@ -122,8 +122,8 @@ public class NBTUtil {
 					NBTTagList castTag = (NBTTagList)tag;
 					for(int i = 0; i < castTag.tagCount(); i++)
 					{
-						sb.append(prefix + castTag.getName());
-						sb.append("[" + i + "]");
+						sb.append(prefix).append(castTag.getName());
+						sb.append("[").append(i).append("]");
 						String returnedValue = GetTagNamesAndValues(castTag.tagAt(i), prefix);
 						if (!returnedValue.isEmpty() && !returnedValue.equals("\n"))
 						{
@@ -136,7 +136,7 @@ public class NBTUtil {
 			case "END":
 				{
 					NBTTagEnd castTag = (NBTTagEnd)tag;
-					sb.append(prefix + castTag.getName() + " : END");
+					sb.append(prefix).append(castTag.getName()).append(" : END");
 				}
 				break;
 			}
@@ -158,7 +158,7 @@ public class NBTUtil {
 		
 		try {
 			@SuppressWarnings("unchecked")
-			ArrayList<?> tags = new ArrayList<Object>(((NBTTagCompound) baseTag).getTags());
+			ArrayList<?> tags = new ArrayList<Object>((baseTag).getTags());
 			for(Object tag : tags)
 			{
 				String returnedValue = GetTagNamesAndValues((NBTBase)tag, prefix);
@@ -310,7 +310,7 @@ public class NBTUtil {
 			return ChatFormat.RED + "No NBT Data found";
 		
 		StringBuilder sb = new StringBuilder();
-		sb.append(ChatFormat.BLUE + "" + itemID + ":" + itemMeta + "\n" + ChatFormat.YELLOW);
+		sb.append(ChatFormat.BLUE + "").append(itemID).append(":").append(itemMeta).append("\n").append(ChatFormat.YELLOW);
 		
 		sb.append(GetNBTTagNamesAndValues(nbt, ""));
 		

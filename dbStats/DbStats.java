@@ -7,12 +7,12 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import dbStats.Util.Utilities;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.util.StatCollector;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidRegistry;
@@ -65,6 +65,8 @@ import dbStats.Util.ErrorUtil;
 import dbStats.databases.DatabaseQueue;
 import dbStats.databases.IDatabaseHandler;
 import dbStats.databases.MySQL.MysqlHandler;
+
+import static dbStats.Util.ErrorUtil.*;
 
 @Mod(modid="DbStats", name="DbStats", version="0.0.1")
 @NetworkMod(clientSideRequired=false)
@@ -344,7 +346,7 @@ public class DbStats {
 	{
 		database.deleteAllTableInfo(database.findTableByName("items"));
 		
-		ErrorUtil.LogMessage("Dumping items to database");
+		LogMessage("Dumping items to database");
 		
 		ArrayList<Integer> itemsWithMetadata = new ArrayList<Integer>();
 		HashMap<String, String> detectedMods = new HashMap<String, String>(); 
@@ -376,7 +378,7 @@ public class DbStats {
 					}
 					ArrayList<String> unlocalizedNames = new ArrayList<String>(16);
 					unlocalizedNames.add(is.getUnlocalizedName());
-					MinecraftForge.EVENT_BUS.post(new EStatistic(new DatabaseItem(is.itemID, 0, StatCollector.translateToLocal(is.getUnlocalizedName() + ".name"), is.getUnlocalizedName(), modId)));
+					MinecraftForge.EVENT_BUS.post(new EStatistic(new DatabaseItem(is.itemID, 0, Utilities.GetLocalisedItemName(is), is.getUnlocalizedName(), modId)));
 					
 					for(int j = 1; j < 16; j++)
 					{
@@ -385,12 +387,12 @@ public class DbStats {
 							if (is.getUnlocalizedName() != null && !unlocalizedNames.contains(is.getUnlocalizedName()))
 							{
 								unlocalizedNames.add(is.getUnlocalizedName());
-								MinecraftForge.EVENT_BUS.post(new EStatistic(new DatabaseItem(is.itemID, j, StatCollector.translateToLocal(is.getUnlocalizedName() + ".name"), is.getUnlocalizedName(), modId)));
+								MinecraftForge.EVENT_BUS.post(new EStatistic(new DatabaseItem(is.itemID, j, Utilities.GetLocalisedItemName(is), is.getUnlocalizedName(), modId)));
 							}
 						} catch(Exception ex)
 						{
 							// Do nothing, otherwise excessive error spam
-							//ErrorUtil.LogException("Error thrown on itemID Dump (" + i + ":" + j + ") - ", ex);
+//							LogException("Error thrown on itemID Dump (" + i + ":" + j + ") - ", ex);
 						}
 					}
 					unlocalizedNames.clear();
@@ -398,10 +400,10 @@ public class DbStats {
 				else
 				{
 					try {
-						MinecraftForge.EVENT_BUS.post(new EStatistic(new DatabaseItem(is.itemID, 0, StatCollector.translateToLocal(is.getUnlocalizedName() + ".name"), is.getUnlocalizedName(), modId)));
+						MinecraftForge.EVENT_BUS.post(new EStatistic(new DatabaseItem(is.itemID, 0, Utilities.GetLocalisedItemName(is), is.getUnlocalizedName(), modId)));
 					} catch (Exception ex)
 					{
-						ErrorUtil.LogException("Error thrown on itemId Dump (" + i + ") - ", ex);
+						LogException("Error thrown on itemId Dump (" + i + ") - ", ex);
 					}
 				}
 			}
@@ -417,7 +419,7 @@ public class DbStats {
 	private void DumpFluids()
 	{
 		database.deleteAllTableInfo(database.findTableByName("fluids"));
-		ErrorUtil.LogMessage("Dumping fluids to database");
+		LogMessage("Dumping fluids to database");
 		Map<String, Integer> fluids = FluidRegistry.getRegisteredFluidIDs();
 		Ordering<String> valueCompartor = Ordering.natural().onResultOf(Functions.forMap(fluids));
 		fluids = ImmutableSortedMap.copyOf(fluids, valueCompartor);

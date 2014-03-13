@@ -35,12 +35,12 @@ public class PlayerStatistic extends Statistic {
 	{
 		StringBuilder sb = new StringBuilder();
 		
-		sb.append(this.column + "=");
+		sb.append(this.column).append("=");
 		if (this.addToCurrent)
 		{
-			sb.append(this.column + " + ");
+			sb.append(this.column).append(" + ");
 		}
-		sb.append("'" + this.amount + "'");
+		sb.append("'").append(this.amount).append("'");
 		
 		return sb.toString();
 	}

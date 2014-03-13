@@ -23,7 +23,7 @@ public class DbEntityDeathEvent {
 				EntityPlayer player = (EntityPlayer)event.entityLiving;
 				MinecraftForge.EVENT_BUS.post(new EStatistic(new PlayerStatistic("players", "Deaths", player.username, 1, true)));
 				
-				String how = "", what = "", enchantments = "", nbt = "";
+				String how, what = "", enchantments = "", nbt = "";
 				int itemId = 0, itemMeta = 0;
 				
 				how = event.source.damageType;
@@ -53,7 +53,7 @@ public class DbEntityDeathEvent {
 				{
 					MinecraftForge.EVENT_BUS.post(new EStatistic(new PlayerStatistic("players", "Kills", player.username, 1, true)));
 					
-					String how = "", what = "", enchantments = "", nbt = "";
+					String how, what = "", enchantments = "", nbt = "";
 					int itemId = 0, itemMeta = 0;
 					
 					how = event.source.damageType;

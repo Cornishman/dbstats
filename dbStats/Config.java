@@ -423,6 +423,6 @@ public class Config {
 	
 	public boolean forceQueueUpdate(int size)
 	{
-		return sizeOfQueueBeforeForceUpdate > 0 ? size > sizeOfQueueBeforeForceUpdate : false;
+		return sizeOfQueueBeforeForceUpdate > 0 && size > sizeOfQueueBeforeForceUpdate;
 	}
 }

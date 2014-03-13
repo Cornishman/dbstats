@@ -28,7 +28,7 @@ public class ErrorUtil {
 
 	public static void LogStatisticError(Statistic stat)
 	{
-		String message = "";
+		String message;
 		
 		message = IDatabaseHandler.type + " :  Failed to update " + stat.column + " in " + stat.table + " table for player " + stat.playerName;
 		

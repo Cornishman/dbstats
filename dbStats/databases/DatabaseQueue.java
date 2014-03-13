@@ -10,7 +10,7 @@ import dbStats.Util.ErrorUtil;
 
 public class DatabaseQueue {
 	
-	ArrayList<Statistic> statsQueue;
+	final ArrayList<Statistic> statsQueue;
 	QueueHandler queueHandler;
 	
 	private class QueueHandler implements Runnable {
@@ -40,7 +40,7 @@ public class DatabaseQueue {
 				}
 				
 				//Now do what we will with copiedStatsQueue
-				copiedStatsQueue = GroupQueueStatstics(copiedStatsQueue);
+				copiedStatsQueue = GroupQueueStatstics(copiedStatsQueue, true);
 				copiedStatsQueue = DbStats.database.GroupStatsIntoSingleQueriesAndExecute(copiedStatsQueue);
 				
 				for(Statistic stat : copiedStatsQueue)
@@ -71,7 +71,7 @@ public class DatabaseQueue {
 			statsQueue.add(stat);
 			if (DbStats.config.forceQueueUpdate(statsQueue.size()))
 			{
-				statsQueue = GroupQueueStatstics(statsQueue);
+				GroupQueueStatstics(statsQueue, false);
 				if (DbStats.config.forceQueueUpdate(statsQueue.size()))
 				{
 					queueHandler.runner.interrupt();
@@ -85,7 +85,7 @@ public class DatabaseQueue {
 		AddStatisticToQueue(event.statistic);
 	}
 	
-	private ArrayList<Statistic> GroupQueueStatstics(ArrayList<Statistic> stats)
+	private ArrayList<Statistic> GroupQueueStatstics(ArrayList<Statistic> stats, Boolean returnGroup)
 	{
 		ArrayList<Statistic> groupedStats = new ArrayList<Statistic>();
 		
@@ -113,8 +113,13 @@ public class DatabaseQueue {
 			
 			stats.removeAll(statsToRemove);
 			groupedStats.add(currentStat);
-			currentStat = null;
 		}
+
+        if (!returnGroup)
+        {
+            stats.addAll(groupedStats);
+            return null;
+        }
 		
 		return groupedStats;
 	}
