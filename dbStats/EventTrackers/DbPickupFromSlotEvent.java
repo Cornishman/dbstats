@@ -30,7 +30,7 @@ public class DbPickupFromSlotEvent {
 				TileEntity te = (TileEntity) event.slot.inventory;
 				blockId = te.blockType != null ? te.blockType.blockID : 0;
 				blockId = blockId <= 0 ? te.worldObj.getBlockId(te.xCoord, te.yCoord, te.zCoord) : blockId;
-				blockMeta = te.blockMetadata <= 0 ? te.worldObj.getBlockMetadata(te.xCoord, te.yCoord, te.zCoord) : 0;
+				blockMeta = te.blockMetadata <= 0 ? te.worldObj.getBlockMetadata(te.xCoord, te.yCoord, te.zCoord) : te.blockMetadata;
 			}
 			else
 			{
@@ -44,7 +44,7 @@ public class DbPickupFromSlotEvent {
 						TileEntity te = (TileEntity)forestryTile.get(event.slot.inventory);
 						blockId = te.blockType != null ? te.blockType.blockID : 0;
 						blockId = blockId <= 0 ? te.worldObj.getBlockId(te.xCoord, te.yCoord, te.zCoord) : blockId;
-						blockMeta = te.blockMetadata <= 0 ? te.worldObj.getBlockMetadata(te.xCoord, te.yCoord, te.zCoord) : 0;
+						blockMeta = te.blockMetadata <= 0 ? te.worldObj.getBlockMetadata(te.xCoord, te.yCoord, te.zCoord) : te.blockMetadata;
 					}
 				}
 				catch (Exception e)
