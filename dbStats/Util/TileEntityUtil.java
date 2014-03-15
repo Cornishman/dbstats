@@ -1,5 +1,6 @@
 package dbStats.Util;
 
+import net.minecraft.inventory.Container;
 import net.minecraft.tileentity.TileEntity;
 
 import java.lang.reflect.Field;
@@ -15,7 +16,7 @@ public class TileEntityUtil {
             ID = 0;
             Meta = 0;
         }
-    };
+    }
 
     public static Block GetModBlock(Object tileEntity)
     {
@@ -49,9 +50,33 @@ public class TileEntityUtil {
                 }
             }
         } catch(Exception ex){
-            return new Block();
+            //Do nothing
         }
 
         return block;
+    }
+
+    public static Block GetModBlock(Container container)
+    {
+        try {
+            for(Field field : container.getClass().getDeclaredFields())
+            {
+                if (!field.isAccessible())
+                {
+                    field.setAccessible(true);
+                }
+
+                if (field.get(container) instanceof TileEntity)
+                {
+                    return GetModBlock(field.get(container));
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            //Do nothing
+        }
+
+        return new Block();
     }
 }
