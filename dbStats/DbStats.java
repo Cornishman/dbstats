@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import dbStats.Events.DbStatsCraftingHandler;
 import dbStats.Util.Utilities;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -255,6 +256,7 @@ public class DbStats {
 			MinecraftForge.EVENT_BUS.register(playerCraftingTracker);
 			playerPickupSlotTracker = new DbPickupFromSlotEvent();
 			MinecraftForge.EVENT_BUS.register(playerPickupSlotTracker);
+            GameRegistry.registerCraftingHandler(new DbStatsCraftingHandler());
 		}
 		
 		if (Config.enableItemDropLogging)
