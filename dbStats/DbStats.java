@@ -374,10 +374,6 @@ public class DbStats {
 				ItemStack is = new ItemStack(item);
 				if (item.getHasSubtypes())
 				{
-					if (Config.saveItemIdsWithMetadata)
-					{
-						itemsWithMetadata.add(is.itemID);
-					}
 					ArrayList<String> unlocalizedNames = new ArrayList<String>(16);
 					unlocalizedNames.add(is.getUnlocalizedName());
 					MinecraftForge.EVENT_BUS.post(new EStatistic(new DatabaseItem(is.itemID, 0, Utilities.GetLocalisedItemName(is), is.getUnlocalizedName(), modId)));
@@ -397,6 +393,13 @@ public class DbStats {
 //							LogException("Error thrown on itemID Dump (" + i + ":" + j + ") - ", ex);
 						}
 					}
+
+                    //Fix to prevent item's that "supposedly" have subtypes
+                    if (Config.saveItemIdsWithMetadata && unlocalizedNames.size() > 1)
+                    {
+                        itemsWithMetadata.add(is.itemID);
+                    }
+
 					unlocalizedNames.clear();
 				}
 				else
