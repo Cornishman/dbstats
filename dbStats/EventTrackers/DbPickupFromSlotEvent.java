@@ -2,6 +2,7 @@ package dbStats.EventTrackers;
 
 import java.lang.reflect.Field;
 
+import dbStats.Util.TileEntityUtil;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.tileentity.TileEntity;
@@ -23,33 +24,10 @@ public class DbPickupFromSlotEvent {
 		if (event.player != null && event.itemStack != null && event.slot != null && event.player instanceof EntityPlayerMP 
 				&& Utilities.CanTrackPlayer(event.player) && !(event.slot.inventory instanceof InventoryPlayer))
 		{
-			int blockId = 0;
-			int blockMeta = 0;
-			if (event.slot.inventory instanceof TileEntity)
-			{
-				TileEntity te = (TileEntity) event.slot.inventory;
-				blockId = te.blockType != null ? te.blockType.blockID : 0;
-				blockId = blockId <= 0 ? te.worldObj.getBlockId(te.xCoord, te.yCoord, te.zCoord) : blockId;
-				blockMeta = te.blockMetadata <= 0 ? te.worldObj.getBlockMetadata(te.xCoord, te.yCoord, te.zCoord) : te.blockMetadata;
-			}
-			else
-			{
-				//Not tile entity (Mod item?) try and work out what
-				try{
-					//Forestry mod
-					Field forestryTile = event.slot.inventory.getClass().getDeclaredField("tile");
-					forestryTile.setAccessible(true);
-					if (forestryTile != null)
-					{
-						TileEntity te = (TileEntity)forestryTile.get(event.slot.inventory);
-						blockId = te.blockType != null ? te.blockType.blockID : 0;
-						blockId = blockId <= 0 ? te.worldObj.getBlockId(te.xCoord, te.yCoord, te.zCoord) : blockId;
-						blockMeta = te.blockMetadata <= 0 ? te.worldObj.getBlockMetadata(te.xCoord, te.yCoord, te.zCoord) : te.blockMetadata;
-					}
-				}
-				catch (Exception e)
-				{}	//Do nothing
-			}
+            TileEntityUtil.Block modBlock = TileEntityUtil.GetModBlock(event.slot.inventory);
+
+			int blockId = modBlock.ID;
+			int blockMeta = modBlock.Meta;
 			
 			if (Utilities.IsThisSlotCrafting(blockId, blockMeta, event.slot.slotNumber))
 			{
