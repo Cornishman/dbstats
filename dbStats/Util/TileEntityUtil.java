@@ -30,42 +30,26 @@ public class TileEntityUtil {
             return block;
         }
 
-        //Specific mod cases
         try {
-            //Forestry Mod
-            if (tileEntity.getClass().toString().equals("class forestry.core.utils.TileInventoryAdapter"))
+            for(Field field : tileEntity.getClass().getDeclaredFields())
             {
-                return readModBlock(tileEntity, "tile");
+                if (!field.isAccessible())
+                {
+                    field.setAccessible(true);
+                }
+
+                if (field.get(tileEntity) instanceof TileEntity)
+                {
+                    TileEntity te = (TileEntity)field.get(tileEntity);
+                    block.ID = te.getBlockType() != null ? te.getBlockType().blockID : 0;
+                    block.ID = block.ID <= 0 ? te.worldObj.getBlockId(te.xCoord, te.yCoord, te.zCoord) : block.ID;
+                    block.Meta = te.blockMetadata <= 0 ? te.worldObj.getBlockMetadata(te.xCoord, te.yCoord, te.zCoord) : te.blockMetadata;
+
+                    return block;
+                }
             }
-
-            //Applied Energistics
-            if (tileEntity.getClass().toString().equals("class appeng.common.AppEngInternalInventory"))
-            {
-                return readModBlock(tileEntity, "te");
-            }
-        }
-        catch (Exception ex)
-        {
-            //Do nothing
-        }
-
-        return block;
-    }
-
-    private static Block readModBlock(Object obj, String fieldName)
-            throws NoSuchFieldException, IllegalAccessException
-    {
-        Field modTileEntity = obj.getClass().getDeclaredField(fieldName);
-        modTileEntity.setAccessible(true);
-
-        Block block = new Block();
-
-        if (modTileEntity != null)
-        {
-            TileEntity te = (TileEntity)modTileEntity.get(obj);
-            block.ID = te.getBlockType() != null ? te.getBlockType().blockID : 0;
-            block.ID = block.ID <= 0 ? te.worldObj.getBlockId(te.xCoord, te.yCoord, te.zCoord) : block.ID;
-            block.Meta = te.blockMetadata <= 0 ? te.worldObj.getBlockMetadata(te.xCoord, te.yCoord, te.zCoord) : te.blockMetadata;
+        } catch(Exception ex){
+            return new Block();
         }
 
         return block;
