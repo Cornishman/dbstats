@@ -3,7 +3,7 @@
     "modid": "DbStats",
     "name": "DbStats",
     "description": "A mod that keeps track of detailed statistics about players actions within minecraft and stores the information within a database.",
-    "version": "0.0.1",
+    "version": "0.1.0",
     "mcversion": "1.6.4",
     "url": "",
     "updateUrl": "",

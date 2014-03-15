@@ -69,7 +69,7 @@ import dbStats.databases.MySQL.MysqlHandler;
 
 import static dbStats.Util.ErrorUtil.*;
 
-@Mod(modid="DbStats", name="DbStats", version="0.0.1")
+@Mod(modid="DbStats", name="DbStats", version="0.1.0")
 @NetworkMod(clientSideRequired=false)
 public class DbStats {
 
