@@ -42,11 +42,11 @@ public class DbPickupFromSlotEvent {
 			if (Utilities.IsThisSlotCrafting(blockId, blockMeta, event.slot.slotNumber))
 			{
 				MinecraftForge.EVENT_BUS.post(new EStatistic(new BlockItemStatistic("bistats", "total", event.player.username, event.itemStack.itemID, Utilities.GetItemMetaDataValue(event.itemStack),
-						event.itemStack.stackSize, Utilities.GetItemNBT(event.itemStack), "craft")));
+						stackSize, Utilities.GetItemNBT(event.itemStack), "craft")));
 			}
 			else if (Utilities.IsThisSlotSmelting(blockId, blockMeta, event.slot.slotNumber)){
 				MinecraftForge.EVENT_BUS.post(new EStatistic(new BlockItemStatistic("bistats", "total", event.player.username, event.itemStack.itemID, Utilities.GetItemMetaDataValue(event.itemStack),
-						event.itemStack.stackSize, Utilities.GetItemNBT(event.itemStack), "smelt")));
+                        stackSize, Utilities.GetItemNBT(event.itemStack), "smelt")));
 			}
 			
 			if (Utilities.PlayerExistsInSlotDebugginList(event.player.username))
