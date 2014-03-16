@@ -7,13 +7,16 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import cpw.mods.fml.common.registry.LanguageRegistry;
 import dbStats.Events.DbStatsCraftingHandler;
 import dbStats.Util.Utilities;
+import net.minecraft.block.Block;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.server.MinecraftServer;
+import net.minecraftforge.common.FakePlayer;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidRegistry;
@@ -142,23 +145,23 @@ public class DbStats {
 		server = event.getServer();
 
 		RegisterCommands(event);
-		
+
 		if (server.getEntityWorld().isRemote)
 		{
 			log.log(Level.INFO, "Remote world(server) detected, disabling DbStats locally.");
 			return;
 		}
 		
-		if (database.IsReady())
-		{
-			if (!database.checkDatabase())
-			{
-				log.log(Level.INFO, "Database check failed!");
-				database = null;
-			}
-		}
+//		if (database != null && database.IsReady())
+//		{
+//			if (!database.checkDatabase())
+//			{
+//				log.log(Level.INFO, "Database check failed!");
+////				database = null;
+//			}
+//		}
 		
-		if (database == null || !database.IsReady())
+		if (database == null || !database.IsReady() || !database.checkDatabase())
 		{
 			log.log(Level.SEVERE, "DbStats encountered errors and has had it's functionality disabled.");
 			return;
@@ -194,7 +197,7 @@ public class DbStats {
 	@EventHandler
 	public void serverStopping(FMLServerStoppingEvent event)
 	{
-		if (database == null || !database.IsReady())
+		if (database == null || !database.IsReady() || !database.IsDatabaseChecked())
 			return;
 		
 		log.log(Level.INFO, "Server Stopping - Stopping all trackers.");
@@ -209,18 +212,28 @@ public class DbStats {
 	{
 		if (database == null || !database.IsReady())
 			return;
-		
-		log.log(Level.INFO, "Server Stopped - Pushing the current queue to the database.");
-		statsQueue.StopQueueHandler();
+
+        if (database.IsDatabaseChecked())
+        {
+            log.log(Level.INFO, "Server Stopped - Pushing the current queue to the database.");
+            statsQueue.StopQueueHandler();
+        }
+        else
+        {
+            log.log(Level.INFO, "Server Stopped - previous database check failed so ignoring queues.");
+        }
 		
 		if (database.isConnceted()) database.disconnect();
 		
-		if (statsQueue != null)
+		if (statsQueue != null && database.IsDatabaseChecked())
 		{
 			MinecraftForge.EVENT_BUS.unregister(statsQueue);
 		}
-		
-		log.log(Level.INFO, "Finished pushing all queued stats to database.");
+
+        if (database.IsDatabaseChecked())
+        {
+		    log.log(Level.INFO, "Finished pushing all queued stats to database.");
+        }
 	}
 	
 	private void initTrackers()
@@ -364,7 +377,7 @@ public class DbStats {
 	    for (int i = 0; i < itemDataList.tagCount(); i++)
 	    {
 	    	ItemData itemData = new ItemData((NBTTagCompound)itemDataList.tagAt(i));
-	    	
+
 			Item item = Item.itemsList[itemData.getItemId()];
 			if (item != null)
 			{
@@ -372,45 +385,43 @@ public class DbStats {
 				modId = modId == null ? "Minecraft" : modId;
 				
 				ItemStack is = new ItemStack(item);
-				if (item.getHasSubtypes())
-				{
-					ArrayList<String> unlocalizedNames = new ArrayList<String>(16);
-					unlocalizedNames.add(is.getUnlocalizedName());
-					MinecraftForge.EVENT_BUS.post(new EStatistic(new DatabaseItem(is.itemID, 0, Utilities.GetLocalisedItemName(is), is.getUnlocalizedName(), modId)));
-					
-					for(int j = 1; j < 16; j++)
-					{
-						try {
-							is.setItemDamage(j);
-							if (is.getUnlocalizedName() != null && !unlocalizedNames.contains(is.getUnlocalizedName()))
-							{
-								unlocalizedNames.add(is.getUnlocalizedName());
-								MinecraftForge.EVENT_BUS.post(new EStatistic(new DatabaseItem(is.itemID, j, Utilities.GetLocalisedItemName(is), is.getUnlocalizedName(), modId)));
-							}
-						} catch(Exception ex)
-						{
-							// Do nothing, otherwise excessive error spam
-//							LogException("Error thrown on itemID Dump (" + i + ":" + j + ") - ", ex);
-						}
-					}
+                String localisedName = Utilities.GetLocalisedItemName(is, itemData.getModId());
+
+                ArrayList<String> unlocalizedNames = new ArrayList<String>(16);
+                unlocalizedNames.add(is.getUnlocalizedName() + "." + localisedName);
+
+                try {
+                    MinecraftForge.EVENT_BUS.post(new EStatistic(new DatabaseItem(is.itemID, 0, localisedName , is.getUnlocalizedName(), modId)));
+                } catch (Exception ex)
+                {
+                    LogException("Error thrown on itemId Dump (" + i + ") - ", ex);
+                }
+
+                if (is.getHasSubtypes())
+                {
+                    for(int j = 1; j < 16; j++)
+                    {
+                        try {
+                            is.setItemDamage(j);
+                            localisedName = Utilities.GetLocalisedItemName(is, itemData.getModId());
+                            if (!unlocalizedNames.contains(is.getUnlocalizedName() + "." + localisedName))
+                            {
+                                unlocalizedNames.add(is.getUnlocalizedName() + "." + localisedName);
+                                MinecraftForge.EVENT_BUS.post(new EStatistic(new DatabaseItem(is.itemID, j, localisedName, is.getUnlocalizedName(), modId)));
+                            }
+                        } catch(Exception ex)
+                        {
+                            // Do nothing, otherwise excessive error spam
+    //							LogException("Error thrown on itemID Dump (" + i + ":" + j + ") - ", ex);
+                        }
+                    }
 
                     //Fix to prevent item's that "supposedly" have subtypes
                     if (Config.saveItemIdsWithMetadata && unlocalizedNames.size() > 1)
                     {
                         itemsWithMetadata.add(is.itemID);
                     }
-
-					unlocalizedNames.clear();
-				}
-				else
-				{
-					try {
-						MinecraftForge.EVENT_BUS.post(new EStatistic(new DatabaseItem(is.itemID, 0, Utilities.GetLocalisedItemName(is), is.getUnlocalizedName(), modId)));
-					} catch (Exception ex)
-					{
-						LogException("Error thrown on itemId Dump (" + i + ") - ", ex);
-					}
-				}
+                }
 			}
 		}
 		
@@ -489,8 +500,8 @@ public class DbStats {
 		MinecraftForge.EVENT_BUS.post(new Table("EntityDamages", columns, "total"));
 		
 		columns = new Column[]{
-				new Column("Id", ColumnType.INT, 0, false, "0", false, false, false),
-				new Column("Meta", ColumnType.INT, 0, false, "0", false, false, false),
+				new Column("Id", ColumnType.INT, 0, false, "0", true, false, false),
+				new Column("Meta", ColumnType.INT, 0, false, "0", true, false, false),
 				new Column("DisplayName", ColumnType.VARCHAR, 100, false, "", false, false, false),
 				new Column("unlocalizedName", ColumnType.VARCHAR, 100, false, "", false, false, false),
 				new Column("ModId", ColumnType.VARCHAR, 100, false, "", false, false, false)

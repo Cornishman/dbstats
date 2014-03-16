@@ -1,5 +1,6 @@
 package dbStats.Util;
 
+import cpw.mods.fml.common.registry.LanguageRegistry;
 import dbStats.API.Column.ColumnType;
 import dbStats.Config;
 import dbStats.DbStats;
@@ -277,16 +278,110 @@ public class Utilities {
 		return DbStats.playersForNBTDebug != null && DbStats.playersForNBTDebug.contains(player);
 	}
 
-    public static String GetLocalisedItemName(ItemStack itemStack)
+    public static String GetLocalisedItemName(ItemStack itemStack, String modID)
     {
-        String name;
+        //Attempt to obtain the Localised item name in anyway possible
+        //This is a very messy function designed to try and obtain mod items as best it can (For the most part servers can't!)
 
+        String unlocalisedName = itemStack.getUnlocalizedName();
+        String unlocalisedNameMinusItem = unlocalisedName.replaceFirst("item.", "");
+
+        String name = itemStack.getUnlocalizedName();
+
+        //For safety : some mods fail to include this method in their blocks/items so it can throw exceptions
+        //As for servers, a lot of mods use a proxy that causes these functions to return null
         try {
             name = itemStack.getDisplayName();
-        }
-        catch (Exception ex)
+        } catch (Exception ex) { }
+
+        if (name.contains(unlocalisedName))
         {
-            name = StatCollector.translateToLocal(itemStack.getUnlocalizedName() + ".name");
+            try {
+                name = itemStack.getItem().getItemDisplayName(itemStack);
+            } catch (Exception ex) { }
+        }
+
+        if (!name.contains(unlocalisedName)) { return name; }
+
+        name = StatCollector.translateToLocal(unlocalisedName + ".name");
+
+        if (!name.equals(unlocalisedName + ".name")) { return name; }
+
+        name = StatCollector.translateToLocal(unlocalisedName);
+
+        if (!name.equals(unlocalisedName)) { return name; }
+
+        name = StatCollector.translateToLocal("item." + unlocalisedName);
+
+        if (!name.equals("item." + unlocalisedName)) { return name; }
+
+        name = StatCollector.translateToLocal("item." + unlocalisedName + ".name");
+
+        if (!name.equals("item." + unlocalisedName + ".name")) { return name; }
+
+        name = StatCollector.translateToLocal("tile." + unlocalisedName);
+
+        if (!name.equals("tile." + unlocalisedName)) { return name; }
+
+        name = StatCollector.translateToLocal("tile." + unlocalisedName + ".name");
+
+        if (!name.equals("tile." + unlocalisedName + ".name")) { return name; }
+
+        if (!modID.isEmpty())
+        {
+            name = StatCollector.translateToLocal(modID + "." + unlocalisedName);
+
+            if (!name.equals(modID + "." + unlocalisedName)) { return name; }
+
+            name = StatCollector.translateToLocal(modID.toLowerCase() + "." + unlocalisedName);
+
+            if (!name.equals(modID.toLowerCase() + "." + unlocalisedName)) { return name; }
+        }
+
+        name = unlocalisedName;
+
+        if (name.isEmpty() || name.contains(unlocalisedName))
+        {
+            name = LanguageRegistry.instance().getStringLocalization(unlocalisedName);
+        }
+
+        if (!name.isEmpty()) { return name; }
+
+        name = LanguageRegistry.instance().getStringLocalization(unlocalisedName + ".name");
+
+        if (!name.isEmpty()) { return name; }
+
+        name = LanguageRegistry.instance().getStringLocalization(unlocalisedNameMinusItem);
+
+        if (!name.isEmpty()) { return name; }
+
+        name = LanguageRegistry.instance().getStringLocalization(unlocalisedNameMinusItem + ".name");
+
+        if (!name.isEmpty()) { return name; }
+
+        if (!modID.isEmpty())
+        {
+            name = LanguageRegistry.instance().getStringLocalization(modID + "." + unlocalisedName);
+
+            if (!name.isEmpty()) { return name; }
+
+            name = LanguageRegistry.instance().getStringLocalization(modID + "." + unlocalisedName + ".name");
+
+            if (!name.isEmpty()) { return name; }
+
+            name = LanguageRegistry.instance().getStringLocalization(modID.toLowerCase() + "." + unlocalisedName);
+
+            if (!name.isEmpty()) { return name; }
+
+            name = LanguageRegistry.instance().getStringLocalization(modID.toLowerCase() + "." + unlocalisedName + ".name");
+        }
+
+        if (!name.isEmpty()) { return name; }
+
+        //If this is reached then no other name matches could be found, so default to unlocalised + .name
+        if (name.isEmpty())
+        {
+            name = itemStack.getUnlocalizedName() + ".name";
         }
 
         return name;
