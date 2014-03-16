@@ -25,6 +25,7 @@ public interface IDatabaseHandler {
 	public ArrayList<Statistic> GroupStatsIntoSingleQueriesAndExecute(ArrayList<Statistic> stats);
 	
 	public boolean IsReady();
+    public boolean IsDatabaseChecked();
 	
 	public boolean registerTable(Table table);
 	public Table findTableByName(String name);

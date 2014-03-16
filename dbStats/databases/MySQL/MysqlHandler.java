@@ -27,6 +27,7 @@ public class MysqlHandler implements IDatabaseHandler {
 	
 	public final static String type = "MySQL";
 	private final boolean isReady;
+    private boolean databaseChecked;
 	
 	private static Connection con = null;
 	public MysqlHandler()
@@ -53,6 +54,7 @@ public class MysqlHandler implements IDatabaseHandler {
 		}
 		
 		isReady = ready;
+        databaseChecked = false;
 	}
 	
 	private void loadDriver() throws SQLException
@@ -79,6 +81,11 @@ public class MysqlHandler implements IDatabaseHandler {
 	{
 		return isReady;
 	}
+
+    public boolean IsDatabaseChecked()
+    {
+        return databaseChecked;
+    }
 
 	@Override
 	public void connect() {
@@ -138,7 +145,7 @@ public class MysqlHandler implements IDatabaseHandler {
 			
 			while(resultSet.next())
 			{
-				if (resultSet.getString(1).equals(databaseName))
+				if (resultSet.getString(1).toLowerCase().equals(databaseName.toLowerCase()))
 				{
 					dbExists = true;
 					break;
@@ -171,74 +178,23 @@ public class MysqlHandler implements IDatabaseHandler {
 					resultSet = metadata.getTables(databaseName, null, table.tableName, null);
 					if(resultSet.next())
 					{
+                        ErrorUtil.LogMessage(table.tableName + " table found, checking keys");
+                        if (!CheckKeys(metadata.getIndexInfo(databaseName, null, table.tableName, true, true), table))
+                        {
+                            disconnect();
+                            connection.close();
+                            databaseChecked = false;
+                            return false;
+                        }
+
 						ErrorUtil.LogMessage(table.tableName + " table found, checking columns.");
-						for(Column c : table.columns)
-						{
-							resultSet = metadata.getColumns(databaseName, null, table.tableName, c.name);
-							if(!resultSet.next())
-							{
-								ErrorUtil.LogMessage(table.tableName + "-" + c.name + " column missing, attempting database restructure.");
-								String rename = "RENAME TABLE `" + table.tableName + "` TO `" + table.tableName + "_old`;";
-								if (!executeQuery(rename, false).hadResults)
-								{
-									executeQuery(generateTableConstructionString(table), false);
-									String insert = "INSERT INTO `" + table.tableName + "` SELECT * FROM `" + table.tableName + "_old`";
-									QueryResult qr = executeQuery(insert, true);
-									if (qr.hadResults)	//Insert returns nothing
-									{
-										ErrorUtil.LogMessage(table.tableName + " failed to update!");
-										return false;
-									}
-									else
-									{
-										ErrorUtil.LogMessage(table.tableName + " updated. " + qr.returnedValue);
-										String drop = "DROP TABLE `" + table.tableName + "_old`";
-										executeQuery(drop, false);
-									}
-								}
-							}
-							else
-							{
-								// Compare current column setting with database one, if something has changed we need to alter table...
-								// TODO : Primary/Unique key change, will need to copy entire database and create a new one, copying valuesback
-								ColumnType columnType = Utilities.GetDatabaseColumnType(resultSet.getString("TYPE_NAME").toLowerCase(), "mysql");
-								int columnSize = resultSet.getInt("COLUMN_SIZE");
-								String columnDefault = resultSet.getString("COLUMN_DEF");
-								if (columnDefault == null && Utilities.IsColumnTypeNumerical(columnType) && !c.autoIncrement)
-								{
-									columnDefault = "0";
-								}
-								else if (columnDefault == null)
-								{
-									columnDefault = "";
-								}
-								
-								if (columnType != c.type)
-								{
-									ErrorUtil.LogMessage(c.name + " - Column type mismatch " + columnType + " != " + Utilities.GetDatabaseColumnType(c.type, "mysql") + ". Attempting column modify");
-									if (!ModifyColumn(table, c))
-									{
-										return false;
-									}
-								}
-								else if (c.type == ColumnType.VARCHAR && c.dataSize != columnSize)
-								{
-									ErrorUtil.LogMessage(c.name + " - Column size mismatch " + columnSize + " != " + c.dataSize + ". Attempting column modify");
-									if (!ModifyColumn(table, c))
-									{
-										return false;
-									}
-								}
-								else if (!c.defaultValue.equals(columnDefault))
-								{
-									ErrorUtil.LogMessage(c.name + " - Column default mismatch " + columnDefault + " != " + c.defaultValue + ". Attempting column modify");
-									if (!ModifyColumn(table, c))
-									{
-										return false;
-									}
-								}
-							}
-						}
+						if (!CheckColumns(metadata, table, databaseName))
+                        {
+                            disconnect();
+                            connection.close();
+                            databaseChecked = false;
+                            return false;
+                        }
 					}
 					else
 					{
@@ -257,13 +213,256 @@ public class MysqlHandler implements IDatabaseHandler {
 			
 			disconnect();
 			connection.close();
+            databaseChecked = true;
 		} catch (SQLException e) {
+            ErrorUtil.LogMessage("Database check failed!");
 			ErrorUtil.LogWarning(e.getMessage());
+            databaseChecked = false;
 			return false;
 		}
 		
 		return true;
 	}
+
+    private boolean CheckColumns(DatabaseMetaData metadata, Table table, String databaseName)
+            throws SQLException
+    {
+        for(Column c : table.columns)
+        {
+            ResultSet resultSet = metadata.getColumns(databaseName, null, table.tableName, c.name);
+            if(!resultSet.next())
+            {
+                ErrorUtil.LogMessage(table.tableName + "-" + c.name + " column missing, attempting database restructure.");
+                String rename = "RENAME TABLE `" + table.tableName + "` TO `" + table.tableName + "_old`;";
+                if (!executeQuery(rename, false).hadResults)
+                {
+                    executeQuery(generateTableConstructionString(table), false);
+                    String insert = "INSERT INTO `" + table.tableName + "` SELECT * FROM `" + table.tableName + "_old`";
+                    QueryResult qr = executeQuery(insert, true);
+                    if (qr.hadResults)	//Insert returns nothing
+                    {
+                        ErrorUtil.LogMessage(table.tableName + " failed to update!");
+                        return false;
+                    }
+                    else
+                    {
+                        ErrorUtil.LogMessage(table.tableName + " updated. " + qr.returnedValue);
+                        String drop = "DROP TABLE `" + table.tableName + "_old`";
+                        executeQuery(drop, false);
+                    }
+                }
+            }
+            else
+            {
+                // Compare current column setting with database one, if something has changed we need to alter table...
+                ColumnType columnType = Utilities.GetDatabaseColumnType(resultSet.getString("TYPE_NAME").toLowerCase(), "mysql");
+                int columnSize = resultSet.getInt("COLUMN_SIZE");
+                String columnDefault = resultSet.getString("COLUMN_DEF");
+                if (columnDefault == null && Utilities.IsColumnTypeNumerical(columnType) && !c.autoIncrement)
+                {
+                    columnDefault = "0";
+                }
+                else if (columnDefault == null)
+                {
+                    columnDefault = "";
+                }
+
+                if (columnType != c.type)
+                {
+                    ErrorUtil.LogMessage(c.name + " - Column type mismatch " + columnType + " != " + Utilities.GetDatabaseColumnType(c.type, "mysql") + ". Attempting column modify");
+                    if (!ModifyColumn(table, c))
+                    {
+                        return false;
+                    }
+                }
+                else if (c.type == ColumnType.VARCHAR && c.dataSize != columnSize)
+                {
+                    ErrorUtil.LogMessage(c.name + " - Column size mismatch " + columnSize + " != " + c.dataSize + ". Attempting column modify");
+                    if (!ModifyColumn(table, c))
+                    {
+                        return false;
+                    }
+                }
+                else if (!c.defaultValue.equals(columnDefault))
+                {
+                    ErrorUtil.LogMessage(c.name + " - Column default mismatch " + columnDefault + " != " + c.defaultValue + ". Attempting column modify");
+                    if (!ModifyColumn(table, c))
+                    {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        return true;
+    }
+
+    private boolean CheckKeys(ResultSet resultSet, Table table)
+            throws SQLException
+    {
+
+        ArrayList<String> foundPKeys = new ArrayList<>();
+        ArrayList<String> foundUKeys = new ArrayList<>();
+
+        ArrayList<String> pKeys = new ArrayList<>();
+        ArrayList<String> uKeys = new ArrayList<>();
+
+        for(Column column : table.columns)
+        {
+            if (column.primaryKey)
+            {
+                pKeys.add(column.name);
+            }
+            if (column.uniqueKey)
+            {
+                uKeys.add(column.name);
+            }
+        }
+
+        while(resultSet.next())
+        {
+            if (resultSet.getString("INDEX_NAME").toLowerCase().equals("primary"))
+            {
+                foundPKeys.add(resultSet.getString("COLUMN_NAME"));
+            }
+            else if (resultSet.getString("INDEX_NAME").toLowerCase().equals("uniquekey"))
+            {
+                foundUKeys.add(resultSet.getString("COLUMN_NAME"));
+            }
+        }
+
+        boolean pKeysMatch = true;
+        boolean uKeysMatch = true;
+
+        for(String pKey : pKeys)
+        {
+            if (!foundPKeys.contains(pKey))
+            {
+                ErrorUtil.LogMessage("Primary key '" + pKey + "' not found in " + table.tableName + ".");
+                pKeysMatch = false;
+            }
+        }
+
+        if (pKeysMatch)
+        {
+            for(String pKey : foundPKeys)
+            {
+                if (!pKeys.contains(pKey))
+                {
+                    ErrorUtil.LogMessage("Primary key '" + pKey + "' found in " + table.tableName + " but not in table spec.");
+                    pKeysMatch = false;
+                }
+            }
+        }
+
+        for(String uKey : uKeys)
+        {
+            if (!foundUKeys.contains(uKey))
+            {
+                ErrorUtil.LogMessage("Unique key '" + uKey + "' not found in " + table.tableName + ".");
+                uKeysMatch = false;
+            }
+        }
+
+        if (uKeysMatch)
+        {
+            for(String uKey : foundUKeys)
+            {
+                if (!uKeys.contains(uKey))
+                {
+                    ErrorUtil.LogMessage("Unique key '" + uKey + "' found in " + table.tableName + " but not in table spec.");
+                    uKeysMatch = false;
+                }
+            }
+        }
+
+        if (!pKeysMatch)
+        {
+            ErrorUtil.LogMessage("Primary key didn't match for table " + table.tableName + ", attempting recreation of Primary key...");
+
+            if (foundPKeys.size() > 0)
+            {
+                if (executeQuery("ALTER TABLE `" + table.tableName + "` DROP PRIMARY KEY", false).hadResults)
+                {
+                    ErrorUtil.LogMessage("Failed to drop current Primary key for" + table.tableName);
+                    return false;
+                }
+            }
+            if (!executeQuery(generateAlterTablePrimaryKeys(table), false).hadResults)
+            {
+                ErrorUtil.LogMessage("Succesfully modified Primary Key for " + table.tableName);
+            }
+        }
+
+        if (!uKeysMatch)
+        {
+            ErrorUtil.LogMessage("Unique key didn't match for " + table.tableName + ", attempting recreation of Unique key...");
+
+            if (foundUKeys.size() > 0)
+            {
+                if (executeQuery("ALTER TABLE '" + table.tableName + "' DROP INDEX 'uniqueKey'", false).hadResults)
+                {
+                    ErrorUtil.LogMessage("Failed to drop current Unique key for " + table.tableName);
+                    return false;
+                }
+            }
+
+            if (!executeQuery(generateAlterTableUniqueKeys(table), false).hadResults)
+            {
+                ErrorUtil.LogMessage("Succesfully modified Unique Key for " + table.tableName);
+            }
+        }
+
+        return true;
+    }
+
+    private String generateAlterTablePrimaryKeys(Table table)
+    {
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("ALTER TABLE `");
+        sb.append(table.tableName);
+        sb.append("` ADD PRIMARY KEY (");
+
+        String pKeyString = "";
+        for(Column column : table.columns)
+        {
+            if (column.primaryKey)
+            {
+                pKeyString += " `" + column.name + "`,";
+            }
+        }
+        pKeyString = pKeyString.substring(0, pKeyString.length() - 1);
+
+        sb.append(pKeyString);
+        sb.append(")");
+
+        return sb.toString();
+    }
+
+    private String generateAlterTableUniqueKeys(Table table)
+    {
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("ALTER TABLE `");
+        sb.append(table.tableName);
+        sb.append("` ADD UNIQUE INDEX `uniqueKey` (");
+
+        String uKeyString = "";
+        for(Column column : table.columns)
+        {
+            if (column.uniqueKey)
+            {
+                uKeyString += " `" + column.name + "`,";
+            }
+        }
+        uKeyString = uKeyString.substring(0, uKeyString.length() - 1);
+
+        sb.append(uKeyString);
+        sb.append(")");
+
+        return sb.toString();
+    }
 	
 	private boolean ModifyColumn(Table t, Column c)
 	{
