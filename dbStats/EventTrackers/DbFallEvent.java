@@ -23,7 +23,7 @@ public class DbFallEvent {
 	@ForgeSubscribe(priority = EventPriority.LOWEST)
 	public void onPlayerFallFlyable(PlayerFlyableFallEvent event)
 	{
-		if (event.entityPlayer instanceof EntityPlayerMP && Utilities.CanTrackPlayer(event.entityPlayer))
+		if (Utilities.CanTrackPlayer(event.entityPlayer))
 		{
 			DbStats.timedPlayerTracker.addDistanceStat(event.entityPlayer.username, event.distance, "fallen");
 		}

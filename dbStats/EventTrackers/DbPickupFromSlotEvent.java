@@ -19,7 +19,7 @@ public class DbPickupFromSlotEvent {
 	@ForgeSubscribe(priority = EventPriority.LOWEST)
 	public void onPickupFromSlot(PickupFromSlot event)
 	{
-		if (event.player != null && event.itemStack != null && event.slot != null && event.player instanceof EntityPlayerMP && event.container != null
+		if (event.player != null && event.itemStack != null && event.slot != null && event.container != null
 				&& Utilities.CanTrackPlayer(event.player) && !(event.slot.inventory instanceof InventoryPlayer))
 		{
             TileEntityUtil.Block modBlock = TileEntityUtil.GetModBlock(event.slot.inventory);
