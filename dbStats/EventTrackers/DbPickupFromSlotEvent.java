@@ -3,6 +3,7 @@ package dbStats.EventTrackers;
 import dbStats.API.Events.PickupFromSlot;
 import dbStats.API.Statistics.EStatistic;
 import dbStats.Config;
+import dbStats.Statistics.PlayerStatistic;
 import dbStats.Util.TileEntityUtil;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.entity.player.InventoryPlayer;
@@ -41,10 +42,12 @@ public class DbPickupFromSlotEvent {
 			
 			if (Utilities.IsThisSlotCrafting(blockId, blockMeta, event.slot.slotNumber))
 			{
+                MinecraftForge.EVENT_BUS.post(new EStatistic(new PlayerStatistic("players", "ItemsCrafted", event.player.username, stackSize, true)));
 				MinecraftForge.EVENT_BUS.post(new EStatistic(new BlockItemStatistic("bistats", "total", event.player.username, event.itemStack.itemID, Utilities.GetItemMetaDataValue(event.itemStack),
 						stackSize, Utilities.GetItemNBT(event.itemStack), "craft")));
 			}
 			else if (Utilities.IsThisSlotSmelting(blockId, blockMeta, event.slot.slotNumber)){
+                MinecraftForge.EVENT_BUS.post(new EStatistic(new PlayerStatistic("players", "ItemsSmelted", event.player.username, stackSize, true)));
 				MinecraftForge.EVENT_BUS.post(new EStatistic(new BlockItemStatistic("bistats", "total", event.player.username, event.itemStack.itemID, Utilities.GetItemMetaDataValue(event.itemStack),
                         stackSize, Utilities.GetItemNBT(event.itemStack), "smelt")));
 			}
