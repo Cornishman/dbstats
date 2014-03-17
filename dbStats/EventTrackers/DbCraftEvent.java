@@ -1,13 +1,15 @@
 package dbStats.EventTrackers;
 
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.EventPriority;
-import net.minecraftforge.event.ForgeSubscribe;
 import dbStats.API.Events.ItemCrafted;
 import dbStats.API.Statistics.EStatistic;
 import dbStats.Statistics.BlockItemStatistic;
 import dbStats.Statistics.PlayerStatistic;
+import dbStats.Util.ChatFormat;
 import dbStats.Util.Utilities;
+import net.minecraft.util.ChatMessageComponent;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.EventPriority;
+import net.minecraftforge.event.ForgeSubscribe;
 
 public class DbCraftEvent {
 	
@@ -16,6 +18,18 @@ public class DbCraftEvent {
 	{
 		if (event.amount > 0 && Utilities.CanTrackPlayer(event.player))
 		{
+            if (Utilities.PlayerExistsInSlotDebugginList(event.player.username))
+            {
+                ChatMessageComponent cmc = new ChatMessageComponent();
+                cmc.addText(ChatFormat.YELLOW.toString());
+                cmc.addText("[*]");
+                cmc.addText(ChatFormat.GREEN.toString());
+                cmc.addText(" Crafting event detected");
+                cmc.addText(ChatFormat.RED.toString());
+                cmc.addText(" - It's highly recommended not to add this slot to the config!");
+                event.player.sendChatToPlayer(cmc);
+            }
+
 			int itemMeta = Utilities.GetItemMetaDataValue(event.item);
 			String nbt = Utilities.GetItemNBT(event.item);
 			
