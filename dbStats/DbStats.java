@@ -1,5 +1,42 @@
 package dbStats;
 
+import com.google.common.base.Functions;
+import com.google.common.collect.ImmutableSortedMap;
+import com.google.common.collect.Ordering;
+import cpw.mods.fml.common.FMLLog;
+import cpw.mods.fml.common.Loader;
+import cpw.mods.fml.common.Mod;
+import cpw.mods.fml.common.Mod.EventHandler;
+import cpw.mods.fml.common.Mod.Instance;
+import cpw.mods.fml.common.ModContainer;
+import cpw.mods.fml.common.event.*;
+import cpw.mods.fml.common.network.NetworkMod;
+import cpw.mods.fml.common.registry.GameData;
+import cpw.mods.fml.common.registry.GameRegistry;
+import cpw.mods.fml.common.registry.ItemData;
+import dbStats.API.Column;
+import dbStats.API.Column.ColumnType;
+import dbStats.API.Statistics.EStatistic;
+import dbStats.API.Table;
+import dbStats.Command.*;
+import dbStats.EventTrackers.*;
+import dbStats.Events.DbStatsCraftingHandler;
+import dbStats.Statistics.DatabaseFluid;
+import dbStats.Statistics.DatabaseItem;
+import dbStats.Util.ErrorUtil;
+import dbStats.Util.Utilities;
+import dbStats.databases.DatabaseQueue;
+import dbStats.databases.IDatabaseHandler;
+import dbStats.databases.MySQL.MysqlHandler;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagList;
+import net.minecraft.server.MinecraftServer;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.fluids.Fluid;
+import net.minecraftforge.fluids.FluidRegistry;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -7,70 +44,8 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import cpw.mods.fml.common.registry.LanguageRegistry;
-import dbStats.Events.DbStatsCraftingHandler;
-import dbStats.Util.Utilities;
-import net.minecraft.block.Block;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
-import net.minecraft.server.MinecraftServer;
-import net.minecraftforge.common.FakePlayer;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fluids.Fluid;
-import net.minecraftforge.fluids.FluidRegistry;
-
-import com.google.common.base.Functions;
-import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.collect.Ordering;
-
-import cpw.mods.fml.common.FMLLog;
-import cpw.mods.fml.common.Loader;
-import cpw.mods.fml.common.Mod;
-import cpw.mods.fml.common.Mod.EventHandler;
-import cpw.mods.fml.common.Mod.Instance;
-import cpw.mods.fml.common.ModContainer;
-import cpw.mods.fml.common.event.FMLInitializationEvent;
-import cpw.mods.fml.common.event.FMLPostInitializationEvent;
-import cpw.mods.fml.common.event.FMLPreInitializationEvent;
-import cpw.mods.fml.common.event.FMLServerStartingEvent;
-import cpw.mods.fml.common.event.FMLServerStoppedEvent;
-import cpw.mods.fml.common.event.FMLServerStoppingEvent;
-import cpw.mods.fml.common.network.NetworkMod;
-import cpw.mods.fml.common.registry.GameData;
-import cpw.mods.fml.common.registry.GameRegistry;
-import cpw.mods.fml.common.registry.ItemData;
-import dbStats.API.Column;
-import dbStats.API.Column.ColumnType;
-import dbStats.API.Table;
-import dbStats.API.Statistics.EStatistic;
-import dbStats.Command.CommandBlockSlots;
-import dbStats.Command.CommandConfig;
-import dbStats.Command.CommandNBTDebug;
-import dbStats.Command.CommandSlotDebug;
-import dbStats.Command.CommandTracker;
-import dbStats.EventTrackers.DbBlockBreakEvent;
-import dbStats.EventTrackers.DbBlockPlaceEvent;
-import dbStats.EventTrackers.DbCraftEvent;
-import dbStats.EventTrackers.DbDropItemEvent;
-import dbStats.EventTrackers.DbEntityAttackEvent;
-import dbStats.EventTrackers.DbEntityDeathEvent;
-import dbStats.EventTrackers.DbEntityHurtEvent;
-import dbStats.EventTrackers.DbEventHandler;
-import dbStats.EventTrackers.DbFallEvent;
-import dbStats.EventTrackers.DbMoveEvent;
-import dbStats.EventTrackers.DbPickupFromSlotEvent;
-import dbStats.EventTrackers.DbPickupItemEvent;
-import dbStats.EventTrackers.DbPlayerTracker;
-import dbStats.Statistics.DatabaseFluid;
-import dbStats.Statistics.DatabaseItem;
-import dbStats.Util.ErrorUtil;
-import dbStats.databases.DatabaseQueue;
-import dbStats.databases.IDatabaseHandler;
-import dbStats.databases.MySQL.MysqlHandler;
-
-import static dbStats.Util.ErrorUtil.*;
+import static dbStats.Util.ErrorUtil.LogException;
+import static dbStats.Util.ErrorUtil.LogMessage;
 
 @Mod(modid="DbStats", name="DbStats", version="0.1.0")
 @NetworkMod(clientSideRequired=false)
@@ -152,15 +127,6 @@ public class DbStats {
 			return;
 		}
 		
-//		if (database != null && database.IsReady())
-//		{
-//			if (!database.checkDatabase())
-//			{
-//				log.log(Level.INFO, "Database check failed!");
-////				database = null;
-//			}
-//		}
-		
 		if (database == null || !database.IsReady() || !database.checkDatabase())
 		{
 			log.log(Level.SEVERE, "DbStats encountered errors and has had it's functionality disabled.");
@@ -183,9 +149,7 @@ public class DbStats {
 			DumpFluids();
 			Config.dumpFluids = false; //Disable future dumping once done!
 			config.save();
-		}
-		
-//		GameRegistry.registerCraftingHandler(new DbStatsCraftingHandler());
+        }
 		
 		//Currently not disabling this option! - Future option!
 		timedPlayerTracker = new DbPlayerTracker();
@@ -355,7 +319,14 @@ public class DbStats {
 		event.registerServerCommand(new CommandBlockSlots());
 		event.registerServerCommand(new CommandTracker());
 		event.registerServerCommand(new CommandNBTDebug());
+        event.registerServerCommand(new CommandItemDatabase());
 	}
+
+    public void DumpItemIds(String initiator)
+    {
+        LogMessage(initiator + " has initiated a refresh of all item id's!");
+        DumpItemIds();
+    }
 	
 	private void DumpItemIds()
 	{
