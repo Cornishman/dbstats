@@ -1,22 +1,12 @@
 package dbStats.Command;
 
-import net.minecraft.command.ICommandSender;
-import net.minecraftforge.common.MinecraftForge;
 import dbStats.Config;
 import dbStats.DbStats;
-import dbStats.EventTrackers.DbBlockBreakEvent;
-import dbStats.EventTrackers.DbBlockPlaceEvent;
-import dbStats.EventTrackers.DbCraftEvent;
-import dbStats.EventTrackers.DbDropItemEvent;
-import dbStats.EventTrackers.DbEntityAttackEvent;
-import dbStats.EventTrackers.DbEntityDeathEvent;
-import dbStats.EventTrackers.DbEntityHurtEvent;
-import dbStats.EventTrackers.DbFallEvent;
-import dbStats.EventTrackers.DbMoveEvent;
-import dbStats.EventTrackers.DbPickupFromSlotEvent;
-import dbStats.EventTrackers.DbPickupItemEvent;
+import dbStats.EventTrackers.*;
 import dbStats.Util.ChatFormat;
 import dbStats.Util.TableFormatter;
+import net.minecraft.command.ICommandSender;
+import net.minecraftforge.common.MinecraftForge;
 
 public class CommandTracker extends Command {
 

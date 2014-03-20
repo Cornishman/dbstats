@@ -1,14 +1,10 @@
 package dbStats;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeSet;
-
 import net.minecraftforge.common.Configuration;
 import net.minecraftforge.common.Property;
+
+import java.io.File;
+import java.util.*;
 
 public class Config {
 	private static Configuration config;

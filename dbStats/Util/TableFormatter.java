@@ -1,10 +1,10 @@
 package dbStats.Util;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import net.minecraft.command.ICommandSender;
 import net.minecraft.entity.Entity;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class TableFormatter {
     public final StringFiller stringFiller;

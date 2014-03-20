@@ -1,9 +1,9 @@
 package dbStats.Command;
 
-import net.minecraft.command.ICommandSender;
 import dbStats.Config;
 import dbStats.DbStats;
 import dbStats.Util.ChatFormat;
+import net.minecraft.command.ICommandSender;
 
 public class CommandConfig extends Command {
 

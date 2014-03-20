@@ -1,9 +1,9 @@
 package dbStats.databases;
 
-import java.util.ArrayList;
-
-import dbStats.API.Table;
 import dbStats.API.Statistics.Statistic;
+import dbStats.API.Table;
+
+import java.util.ArrayList;
 
 public interface IDatabaseHandler {
 	

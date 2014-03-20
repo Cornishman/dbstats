@@ -1,11 +1,11 @@
 package dbStats.Command;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import net.minecraft.command.ICommandSender;
 import dbStats.Config;
 import dbStats.DbStats;
+import net.minecraft.command.ICommandSender;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class CommandBlockSlots extends Command {
 

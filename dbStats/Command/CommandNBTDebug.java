@@ -1,7 +1,7 @@
 package dbStats.Command;
 
-import net.minecraft.command.ICommandSender;
 import dbStats.Util.Utilities;
+import net.minecraft.command.ICommandSender;
 
 public class CommandNBTDebug extends Command {
 

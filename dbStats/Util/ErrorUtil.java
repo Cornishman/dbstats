@@ -1,13 +1,13 @@
 package dbStats.Util;
 
+import dbStats.API.Statistics.Statistic;
+import dbStats.Config;
+import dbStats.databases.IDatabaseHandler;
+
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import dbStats.Config;
-import dbStats.API.Statistics.Statistic;
-import dbStats.databases.IDatabaseHandler;
 
 public class ErrorUtil {
 	

@@ -1,27 +1,23 @@
 package dbStats.databases.MySQL;
-import java.io.File;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.logging.Level;
 
 import com.mysql.jdbc.DatabaseMetaData;
-
 import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.ModClassLoader;
-import dbStats.Config;
-import dbStats.DbStats;
 import dbStats.API.Column;
 import dbStats.API.Column.ColumnType;
-import dbStats.API.Table;
 import dbStats.API.Statistics.Statistic;
+import dbStats.API.Table;
+import dbStats.Config;
+import dbStats.DbStats;
 import dbStats.Util.ErrorUtil;
 import dbStats.Util.Utilities;
 import dbStats.databases.IDatabaseHandler;
+
+import java.io.File;
+import java.sql.*;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.logging.Level;
 
 public class MysqlHandler implements IDatabaseHandler {
 	
