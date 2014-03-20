@@ -1,14 +1,14 @@
 package dbStats.EventTrackers;
 
+import dbStats.API.Statistics.EStatistic;
+import dbStats.Statistics.DamageStatistic;
+import dbStats.Statistics.PlayerStatistic;
+import dbStats.Util.Utilities;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.EventPriority;
 import net.minecraftforge.event.ForgeSubscribe;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
-import dbStats.API.Statistics.EStatistic;
-import dbStats.Statistics.DamageStatistic;
-import dbStats.Statistics.PlayerStatistic;
-import dbStats.Util.Utilities;
 
 public class DbEntityDeathEvent {
 
@@ -21,7 +21,7 @@ public class DbEntityDeathEvent {
 			if (event.entityLiving instanceof EntityPlayer && Utilities.CanTrackPlayer((EntityPlayer)event.entityLiving))
 			{
 				EntityPlayer player = (EntityPlayer)event.entityLiving;
-				MinecraftForge.EVENT_BUS.post(new EStatistic(new PlayerStatistic("players", "Deaths", player.username, 1, true)));
+				MinecraftForge.EVENT_BUS.post(new EStatistic(new PlayerStatistic(0, 0, "players", "Deaths", player.username, 1, true)));
 				
 				String how, what = "", enchantments = "", nbt = "";
 				int itemId = 0, itemMeta = 0;
@@ -42,7 +42,7 @@ public class DbEntityDeathEvent {
 					}
 				}
 				
-				MinecraftForge.EVENT_BUS.post(new EStatistic(new DamageStatistic("EntityDamages", "", player.username, how, what, itemId, itemMeta, enchantments, 1, nbt, "death")));
+				MinecraftForge.EVENT_BUS.post(new EStatistic(new DamageStatistic(0, 0, "EntityDamages", "", player.username, how, what, itemId, itemMeta, enchantments, 1, nbt, "death")));
 			}
 			
 			//Player killed something
@@ -51,7 +51,7 @@ public class DbEntityDeathEvent {
 				EntityPlayer player = (EntityPlayer)(event.source.getEntity() instanceof EntityPlayer ? event.source.getEntity() : event.source.getSourceOfDamage());
 				if (Utilities.CanTrackPlayer(player))
 				{
-					MinecraftForge.EVENT_BUS.post(new EStatistic(new PlayerStatistic("players", "Kills", player.username, 1, true)));
+					MinecraftForge.EVENT_BUS.post(new EStatistic(new PlayerStatistic(0, 0, "players", "Kills", player.username, 1, true)));
 					
 					String how, what = "", enchantments = "", nbt = "";
 					int itemId = 0, itemMeta = 0;
@@ -72,7 +72,7 @@ public class DbEntityDeathEvent {
 						}
 					}
 					
-					MinecraftForge.EVENT_BUS.post(new EStatistic(new DamageStatistic("EntityDamages", "", player.username, how, what, itemId, itemMeta, enchantments, 1, nbt, "kill")));
+					MinecraftForge.EVENT_BUS.post(new EStatistic(new DamageStatistic(0, 0, "EntityDamages", "", player.username, how, what, itemId, itemMeta, enchantments, 1, nbt, "kill")));
 				}
 			}
 		}

@@ -8,7 +8,7 @@ public class DistanceStatistic extends Statistic {
 	public final String method;
 
 	public DistanceStatistic(String table, String column, String method, String player, double distance) {
-		super("dbstats_distance", table, column, player, true, true, true, true, true);
+		super(0, 0, "dbstats_distance", table, column, player, true, true, true, true, true);
 
 		this.distance = distance;
 		this.method = method;

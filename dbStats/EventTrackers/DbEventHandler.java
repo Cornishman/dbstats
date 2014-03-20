@@ -1,10 +1,10 @@
 package dbStats.EventTrackers;
 
-import net.minecraftforge.event.ForgeSubscribe;
+import dbStats.API.Table;
 import dbStats.Config;
 import dbStats.DbStats;
-import dbStats.API.Table;
 import dbStats.Util.ErrorUtil;
+import net.minecraftforge.event.ForgeSubscribe;
 
 public class DbEventHandler {
 	

@@ -17,7 +17,7 @@ public class DatabaseFluid extends Statistic {
 	
 	public DatabaseFluid(int fluidId, String fluidName, String fluidUnlocalizedName, int fluidBlockId, int fluidColor, int fluidDensity, int fluidLuminosity, int fluidTemperature, int fluidViscosity, boolean fluidIsGaseous)
 	{
-		super("dbstat_databasefluid", "Fluids", "", "server", false, true, false, false, true);
+		super(0, 0, "dbstat_databasefluid", "Fluids", "", "server", false, true, false, false, true);
 		
 		this.id = fluidId;
 		this.name = fluidName;

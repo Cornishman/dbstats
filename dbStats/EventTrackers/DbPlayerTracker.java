@@ -1,22 +1,18 @@
 package dbStats.EventTrackers;
 
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Map.Entry;
-
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.world.WorldServer;
-import net.minecraftforge.common.MinecraftForge;
 import cpw.mods.fml.common.IPlayerTracker;
-import dbStats.DbStats;
 import dbStats.API.Statistics.EStatistic;
+import dbStats.DbStats;
 import dbStats.Statistics.DistanceStatistic;
 import dbStats.Statistics.PlayerStatistic;
 import dbStats.Util.Utilities;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.world.WorldServer;
+import net.minecraftforge.common.MinecraftForge;
+
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.Map.Entry;
 
 public class DbPlayerTracker implements IPlayerTracker {
 	
@@ -54,7 +50,7 @@ public class DbPlayerTracker implements IPlayerTracker {
 				if (!Utilities.CanTrackPlayer(playerName))
 					continue;
 					
-				MinecraftForge.EVENT_BUS.post(new EStatistic(new PlayerStatistic("players", "Playtime", playerName, (int)seconds, true)));
+				MinecraftForge.EVENT_BUS.post(new EStatistic(new PlayerStatistic(0, 0, "players", "Playtime", playerName, (int)seconds, true)));
 				
 				synchronized (this) {
 					Iterator<Entry<String, Double>> it = distances.entrySet().iterator();
@@ -146,11 +142,11 @@ public class DbPlayerTracker implements IPlayerTracker {
 		else
 		{
 			//Increase number of logins if not
-			MinecraftForge.EVENT_BUS.post(new EStatistic(new PlayerStatistic("players", "Logins", player.username, 1, true)));
+			MinecraftForge.EVENT_BUS.post(new EStatistic(new PlayerStatistic(0, 0, "players", "Logins", player.username, 1, true)));
 		}
 		
 		//Update LastLogin
-		MinecraftForge.EVENT_BUS.post(new EStatistic(new PlayerStatistic("players", "LastLogin", player.username, new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(System.currentTimeMillis()), false)));
+		MinecraftForge.EVENT_BUS.post(new EStatistic(new PlayerStatistic(0, 0, "players", "LastLogin", player.username, new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(System.currentTimeMillis()), false)));
 		
 		//Add a player playtime tracker 
 		playerPlaytimeUpdaters.add(new PlaytimeUpdate(player.username));
@@ -159,7 +155,7 @@ public class DbPlayerTracker implements IPlayerTracker {
 	@Override
 	public void onPlayerLogout(EntityPlayer player) {
 		//Update Last seen
-		MinecraftForge.EVENT_BUS.post(new EStatistic(new PlayerStatistic("players", "LastSeen", player.username, new SimpleDateFormat("yyy-MM-dd HH:mm:ss").format(System.currentTimeMillis()), false)));
+		MinecraftForge.EVENT_BUS.post(new EStatistic(new PlayerStatistic(0, 0, "players", "LastSeen", player.username, new SimpleDateFormat("yyy-MM-dd HH:mm:ss").format(System.currentTimeMillis()), false)));
 		
 		//Remove the player playtime tracker
 		removePlayerPlaytimeUpdate(player.username);
@@ -169,7 +165,7 @@ public class DbPlayerTracker implements IPlayerTracker {
 	public void onPlayerChangedDimension(EntityPlayer player) {
 		if (Utilities.CanTrackPlayer(player))
 		{
-			MinecraftForge.EVENT_BUS.post(new EStatistic(new PlayerStatistic("players", "DimensionTeleports", player.username, 1, true)));
+			MinecraftForge.EVENT_BUS.post(new EStatistic(new PlayerStatistic(0, 0, "players", "DimensionTeleports", player.username, 1, true)));
 		}
 	}
 

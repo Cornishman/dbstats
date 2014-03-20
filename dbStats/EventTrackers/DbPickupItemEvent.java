@@ -1,16 +1,16 @@
 package dbStats.EventTrackers;
 
+import dbStats.API.Statistics.EStatistic;
+import dbStats.Statistics.BlockItemStatistic;
+import dbStats.Statistics.PlayerStatistic;
+import dbStats.Util.NBTUtil;
+import dbStats.Util.Utilities;
 import net.minecraft.util.ChatMessageComponent;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.EventPriority;
 import net.minecraftforge.event.ForgeSubscribe;
 import net.minecraftforge.event.entity.player.EntityItemPickupEvent;
-import dbStats.API.Statistics.EStatistic;
-import dbStats.Statistics.BlockItemStatistic;
-import dbStats.Statistics.PlayerStatistic;
-import dbStats.Util.NBTUtil;
-import dbStats.Util.Utilities;
 
 public class DbPickupItemEvent {
 
@@ -24,8 +24,8 @@ public class DbPickupItemEvent {
 			String nbt = Utilities.GetItemNBT(event.item.getEntityItem());
 			int amount = event.item.getEntityItem().stackSize > 0 ? event.item.getEntityItem().stackSize : 1;
 			
-			MinecraftForge.EVENT_BUS.post(new EStatistic(new PlayerStatistic("players", "ItemsPickedUp", event.entityPlayer.username, amount, true)));
-			MinecraftForge.EVENT_BUS.post(new EStatistic(new BlockItemStatistic("bistats", "total", event.entityPlayer.username, itemId, itemMeta, amount, nbt, "pickup")));
+			MinecraftForge.EVENT_BUS.post(new EStatistic(new PlayerStatistic(0, 0, "players", "ItemsPickedUp", event.entityPlayer.username, amount, true)));
+			MinecraftForge.EVENT_BUS.post(new EStatistic(new BlockItemStatistic(0, 0, "bistats", "total", event.entityPlayer.username, itemId, itemMeta, amount, nbt, "pickup")));
 			
 			if (Utilities.PlayerExistsInNBTDebugList(event.entityPlayer.username))
 			{

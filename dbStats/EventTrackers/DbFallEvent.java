@@ -1,13 +1,13 @@
 package dbStats.EventTrackers;
 
+import dbStats.DbStats;
+import dbStats.Util.Utilities;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraftforge.event.EventPriority;
 import net.minecraftforge.event.ForgeSubscribe;
 import net.minecraftforge.event.entity.living.LivingFallEvent;
 import net.minecraftforge.event.entity.player.PlayerFlyableFallEvent;
-import dbStats.DbStats;
-import dbStats.Util.Utilities;
 
 public class DbFallEvent {
 

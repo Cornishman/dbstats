@@ -3,17 +3,16 @@ package dbStats.EventTrackers;
 import dbStats.API.Events.PickupFromSlot;
 import dbStats.API.Statistics.EStatistic;
 import dbStats.Config;
+import dbStats.Statistics.BlockItemStatistic;
 import dbStats.Statistics.PlayerStatistic;
 import dbStats.Util.TileEntityUtil;
-import net.minecraft.entity.player.EntityPlayerMP;
+import dbStats.Util.Utilities;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.util.ChatMessageComponent;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.EventPriority;
 import net.minecraftforge.event.ForgeSubscribe;
-import dbStats.Statistics.BlockItemStatistic;
-import dbStats.Util.Utilities;
 
 public class DbPickupFromSlotEvent {
 
@@ -42,13 +41,13 @@ public class DbPickupFromSlotEvent {
 			
 			if (Utilities.IsThisSlotCrafting(blockId, blockMeta, event.slot.slotNumber))
 			{
-                MinecraftForge.EVENT_BUS.post(new EStatistic(new PlayerStatistic("players", "ItemsCrafted", event.player.username, stackSize, true)));
-				MinecraftForge.EVENT_BUS.post(new EStatistic(new BlockItemStatistic("bistats", "total", event.player.username, event.itemStack.itemID, Utilities.GetItemMetaDataValue(event.itemStack),
+                MinecraftForge.EVENT_BUS.post(new EStatistic(new PlayerStatistic(0, 0, "players", "ItemsCrafted", event.player.username, stackSize, true)));
+				MinecraftForge.EVENT_BUS.post(new EStatistic(new BlockItemStatistic(0, 0, "bistats", "total", event.player.username, event.itemStack.itemID, Utilities.GetItemMetaDataValue(event.itemStack),
 						stackSize, Utilities.GetItemNBT(event.itemStack), "craft")));
 			}
 			else if (Utilities.IsThisSlotSmelting(blockId, blockMeta, event.slot.slotNumber)){
-                MinecraftForge.EVENT_BUS.post(new EStatistic(new PlayerStatistic("players", "ItemsSmelted", event.player.username, stackSize, true)));
-				MinecraftForge.EVENT_BUS.post(new EStatistic(new BlockItemStatistic("bistats", "total", event.player.username, event.itemStack.itemID, Utilities.GetItemMetaDataValue(event.itemStack),
+                MinecraftForge.EVENT_BUS.post(new EStatistic(new PlayerStatistic(0, 0, "players", "ItemsSmelted", event.player.username, stackSize, true)));
+				MinecraftForge.EVENT_BUS.post(new EStatistic(new BlockItemStatistic(0, 0, "bistats", "total", event.player.username, event.itemStack.itemID, Utilities.GetItemMetaDataValue(event.itemStack),
                         stackSize, Utilities.GetItemNBT(event.itemStack), "smelt")));
 			}
 			

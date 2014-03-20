@@ -13,9 +13,9 @@ public class DamageStatistic extends Statistic {
 	public final String action;
 	public float amount;
 	
-	public DamageStatistic(String table, String column, String player, String how, String what, int itemId, int itemMeta, String enchantments, float amount, String nbt, String action)
+	public DamageStatistic(int hashCode, int priority, String table, String column, String player, String how, String what, int itemId, int itemMeta, String enchantments, float amount, String nbt, String action)
 	{
-		super("dbstat_deathkill", table, column, player, true, true, true, true, true);
+		super(hashCode, priority, "dbstat_deathkill", table, column, player, true, true, true, true, true);
 		
 		this.how = how;
 		this.what = what;
@@ -26,19 +26,6 @@ public class DamageStatistic extends Statistic {
 		this.nbt = nbt;
 		this.action = action;
 	}
-
-//	public DamageStatistic(String table, String column, String player, String how, String what, int itemId, int itemMeta, String enchantments, int amount, String nbt, String action) {
-//		super("dbstat_deathkill", table, column, player, true, true, true, true, true);
-//		
-//		this.how = how;
-//		this.what = what;
-//		this.itemId = itemId;
-//		this.itemMeta = itemMeta;
-//		this.enchantments = enchantments;
-//		this.amount = amount;
-//		this.nbt = nbt;
-//		this.action = action;
-//	}
 
 	@Override
 	public boolean Combine(Statistic stat) {

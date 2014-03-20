@@ -33,8 +33,8 @@ public class DbCraftEvent {
 			int itemMeta = Utilities.GetItemMetaDataValue(event.item);
 			String nbt = Utilities.GetItemNBT(event.item);
 			
-			MinecraftForge.EVENT_BUS.post(new EStatistic(new PlayerStatistic("players", "ItemsCrafted", event.player.username, event.amount, true)));
-			MinecraftForge.EVENT_BUS.post(new EStatistic(new BlockItemStatistic("bistats", "total", event.player.username, event.item.itemID, itemMeta, event.amount, nbt, "craft")));
+			MinecraftForge.EVENT_BUS.post(new EStatistic(new PlayerStatistic(0, 0, "players", "ItemsCrafted", event.player.username, event.amount, true)));
+			MinecraftForge.EVENT_BUS.post(new EStatistic(new BlockItemStatistic(0, 0, "bistats", "total", event.player.username, event.item.itemID, itemMeta, event.amount, nbt, "craft")));
 		}
 	}
 }

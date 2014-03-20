@@ -12,7 +12,7 @@ public class DatabaseItem extends Statistic {
 	
 	public DatabaseItem(int itemId, int meta, String displayName, String unlocalisedName, String modID)
 	{
-		super("dbstat_databaseitem", "Items", "", "server", false, true, false, false, true);
+		super(0, 0, "dbstat_databaseitem", "Items", "", "server", false, true, false, false, true);
 		
 		this.modID = modID;
 		this.displayName = displayName;

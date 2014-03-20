@@ -1,15 +1,14 @@
 package dbStats.EventTrackers;
 
-import dbStats.Util.ErrorUtil;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.EventPriority;
-import net.minecraftforge.event.ForgeSubscribe;
-import dbStats.Config;
 import dbStats.API.Events.PlayerBlockBreak;
 import dbStats.API.Statistics.EStatistic;
+import dbStats.Config;
 import dbStats.Statistics.BlockItemStatistic;
 import dbStats.Statistics.PlayerStatistic;
 import dbStats.Util.Utilities;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.EventPriority;
+import net.minecraftforge.event.ForgeSubscribe;
 import net.minecraftforge.event.world.BlockEvent;
 
 public class DbBlockBreakEvent {
@@ -17,28 +16,29 @@ public class DbBlockBreakEvent {
     @ForgeSubscribe(priority = EventPriority.LOWEST)
     public void onPlayerHarvestBlock(BlockEvent.HarvestDropsEvent event)
     {
-        //TODO : Add new priority system to EStatistic that will ignore if the stat matches a recent stat but with a lower priority
-        // this would allow for the multiple break events to be triggered by breaking a block but to only acknowledge 1
-        // Better yet, compare the block x/y/z/ coords against each other, if they match, take the highest priority!
-        if (event.harvester != null && event.block != null)
+        if (event.block != null && !event.isCanceled() && Utilities.CanTrackPlayer(event.harvester))
         {
-            ErrorUtil.LogMessage(event.harvester.getEntityName() + " broke block " + event.block.blockID + ":" + event.blockMetadata);
+            int blockMeta = Config.blocksWithMetaData.contains(event.block.blockID) ? event.blockMetadata : 0;
+
+            int hash = ("players:BlocksBroken:" + event.harvester.username + ":" + 1 + ":" + event.block.blockID + ":" + blockMeta + ":" + event.x + "" + event.y + "" + event.z).hashCode();
+
+            MinecraftForge.EVENT_BUS.post(new EStatistic(new PlayerStatistic(hash, 1, "players", "BlocksBroken", event.harvester.username, 1, true)));
+            MinecraftForge.EVENT_BUS.post(new EStatistic(new BlockItemStatistic(hash, 1, "bistats", "total", event.harvester.username, event.block.blockID, blockMeta, 1, "", "break")));
         }
     }
 
 	@ForgeSubscribe(priority = EventPriority.LOWEST)
 	public void onPlayerBlockBreak(PlayerBlockBreak event)
 	{
-        if (event.player != null) { ErrorUtil.LogMessage(event.player.getEntityName()); }
-
 		if (!event.isCanceled() && Utilities.CanTrackPlayer(event.player))
 		{
-			MinecraftForge.EVENT_BUS.post(new EStatistic(new PlayerStatistic("players", "BlocksBroken", event.player.username, 1, true)));
-			
 			int blockId = event.world.getBlockId(event.blockX, event.blockY, event.blockZ);
 			int blockMeta = Config.blocksWithMetaData.contains(blockId) ? event.world.getBlockMetadata(event.blockX, event.blockY, event.blockZ) : 0;
-			
-			MinecraftForge.EVENT_BUS.post(new EStatistic(new BlockItemStatistic("bistats", "total", event.player.username, blockId, blockMeta, 1, "", "break")));
+
+            int hash = ("players:BlocksBroken:" + event.player.username + ":" + 1 + ":" + blockId + ":" + blockMeta + ":" + event.blockX + "" + event.blockY + "" + event.blockZ).hashCode();
+
+            MinecraftForge.EVENT_BUS.post(new EStatistic(new PlayerStatistic(hash, 0, "players", "BlocksBroken", event.player.username, 1, true)));
+			MinecraftForge.EVENT_BUS.post(new EStatistic(new BlockItemStatistic(hash, 0, "bistats", "total", event.player.username, blockId, blockMeta, 1, "", "break")));
 		}
 	}
 }

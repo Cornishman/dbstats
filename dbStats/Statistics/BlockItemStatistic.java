@@ -10,8 +10,8 @@ public class BlockItemStatistic extends Statistic {
 	public final String nbt;
 	public final String action;
 
-	public BlockItemStatistic(String table, String column, String player, int itemId, int itemMeta, int amount, String itemNbt, String action) {
-		super("dbstat_item", table, column, player, true, true, true, true, true);
+	public BlockItemStatistic(int hashCode, int priority, String table, String column, String player, int itemId, int itemMeta, int amount, String itemNbt, String action) {
+		super(hashCode, priority, "dbstat_item", table, column, player, true, true, true, true, true);
 		
 		this.itemId = itemId;
 		this.itemMeta = itemMeta;

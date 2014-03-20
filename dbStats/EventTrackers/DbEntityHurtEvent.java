@@ -1,5 +1,8 @@
 package dbStats.EventTrackers;
 
+import dbStats.API.Statistics.EStatistic;
+import dbStats.Statistics.DamageStatistic;
+import dbStats.Util.Utilities;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.player.EntityPlayer;
@@ -8,9 +11,6 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.EventPriority;
 import net.minecraftforge.event.ForgeSubscribe;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
-import dbStats.API.Statistics.EStatistic;
-import dbStats.Statistics.DamageStatistic;
-import dbStats.Util.Utilities;
 
 public class DbEntityHurtEvent {
 	
@@ -31,7 +31,7 @@ public class DbEntityHurtEvent {
 				itemMeta = Utilities.GetItemMetaDataValue(damager.getLastActiveItems()[0]);
 			}
 			
-			MinecraftForge.EVENT_BUS.post(new EStatistic(new DamageStatistic("EntityDamages", "", Utilities.GetMobName(event.entity), event.source.damageType, Utilities.GetMobName(damager),
+			MinecraftForge.EVENT_BUS.post(new EStatistic(new DamageStatistic(0, 0, "EntityDamages", "", Utilities.GetMobName(event.entity), event.source.damageType, Utilities.GetMobName(damager),
 					itemId, itemMeta, enchantments, event.ammount, nbt, "hurt")));
 		}
 	}

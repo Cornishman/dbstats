@@ -1,18 +1,18 @@
 package dbStats.Events;
 
-import java.util.logging.Level;
-
+import cpw.mods.fml.common.ICraftingHandler;
 import dbStats.API.Statistics.EStatistic;
+import dbStats.DbStats;
 import dbStats.Statistics.BlockItemStatistic;
 import dbStats.Statistics.PlayerStatistic;
+import dbStats.Util.Utilities;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
-import cpw.mods.fml.common.ICraftingHandler;
-import dbStats.DbStats;
-import dbStats.Util.Utilities;
 import net.minecraftforge.common.MinecraftForge;
+
+import java.util.logging.Level;
 
 public class DbStatsCraftingHandler implements ICraftingHandler{
 
@@ -30,8 +30,8 @@ public class DbStatsCraftingHandler implements ICraftingHandler{
                 int itemMeta = Utilities.GetItemMetaDataValue(item);
                 String nbt = Utilities.GetItemNBT(item);
 
-                MinecraftForge.EVENT_BUS.post(new EStatistic(new PlayerStatistic("players", "ItemsCrafted", player.username, item.stackSize, true)));
-                MinecraftForge.EVENT_BUS.post(new EStatistic(new BlockItemStatistic("bistats", "total", player.username, item.itemID, itemMeta, item.stackSize, nbt, "craft")));
+                MinecraftForge.EVENT_BUS.post(new EStatistic(new PlayerStatistic(0, 0, "players", "ItemsCrafted", player.username, item.stackSize, true)));
+                MinecraftForge.EVENT_BUS.post(new EStatistic(new BlockItemStatistic(0, 0, "bistats", "total", player.username, item.itemID, itemMeta, item.stackSize, nbt, "craft")));
             }
         }
 	}

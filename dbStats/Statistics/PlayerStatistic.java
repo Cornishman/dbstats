@@ -6,14 +6,14 @@ public class PlayerStatistic extends Statistic {
 	
 	public String amount;
 
-	public PlayerStatistic(String table, String column, String player, int amount, boolean addToPrev) {
-		super("dbstats_player", table, column, player, addToPrev, false, true, false, false);
+	public PlayerStatistic(int hashcode, int priority, String table, String column, String player, int amount, boolean addToPrev) {
+		super(hashcode, priority, "dbstats_player", table, column, player, addToPrev, false, true, false, false);
 		
 		this.amount = Integer.toString(amount);
 	}
 	
-	public PlayerStatistic(String table, String column, String player, String amount, boolean addToPrev) {
-		super("dbstats_player", table, column, player, addToPrev, false, true, false, false);
+	public PlayerStatistic(int hashcode, int priority, String table, String column, String player, String amount, boolean addToPrev) {
+		super(hashcode, priority, "dbstats_player", table, column, player, addToPrev, false, true, false, false);
 		
 		this.amount = amount;
 	}

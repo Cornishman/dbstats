@@ -1,12 +1,12 @@
 package dbStats.databases;
 
-import java.util.ArrayList;
-
-import net.minecraftforge.event.ForgeSubscribe;
-import dbStats.DbStats;
 import dbStats.API.Statistics.EStatistic;
 import dbStats.API.Statistics.Statistic;
+import dbStats.DbStats;
 import dbStats.Util.ErrorUtil;
+import net.minecraftforge.event.ForgeSubscribe;
+
+import java.util.ArrayList;
 
 public class DatabaseQueue {
 	
@@ -68,7 +68,23 @@ public class DatabaseQueue {
 	private void AddStatisticToQueue(Statistic stat)
 	{
 		synchronized(statsQueue) {
-			statsQueue.add(stat);
+            boolean match = false;
+            if (stat.priority > 0)
+            {
+                for(Statistic cStat : statsQueue)
+                {
+                    //Compare the uidHash against the current queue, if a match is found override the statistic with the higher priority
+                    if (cStat.uidHash == stat.uidHash && stat.priority > cStat.priority)
+                    {
+                        cStat = stat;
+                        match = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!match) { statsQueue.add(stat);}
+
 			if (DbStats.config.forceQueueUpdate(statsQueue.size()))
 			{
 				GroupQueueStatstics(statsQueue, false);
