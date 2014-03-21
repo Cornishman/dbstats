@@ -5,6 +5,7 @@ import dbStats.API.Statistics.EStatistic;
 import dbStats.Config;
 import dbStats.Statistics.BlockItemStatistic;
 import dbStats.Statistics.PlayerStatistic;
+import dbStats.Util.ErrorUtil;
 import dbStats.Util.TileEntityUtil;
 import dbStats.Util.Utilities;
 import net.minecraft.entity.player.InventoryPlayer;
@@ -13,6 +14,8 @@ import net.minecraft.util.EnumChatFormatting;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.EventPriority;
 import net.minecraftforge.event.ForgeSubscribe;
+
+import java.text.SimpleDateFormat;
 
 public class DbPickupFromSlotEvent {
 
@@ -38,16 +41,21 @@ public class DbPickupFromSlotEvent {
                     stackSize = stackSize > event.player.inventory.getItemStack().stackSize ? event.player.inventory.getItemStack().stackSize : stackSize;
                 }
             }
+
+            int hash = ("craft:" + event.player.username + ":" + event.itemStack.itemID + ":" + Utilities.GetItemMetaDataValue(event.itemStack)
+                    + ":" + stackSize + ":" + new SimpleDateFormat("ss").format(System.currentTimeMillis())).hashCode();
+
+            ErrorUtil.LogMessage("" + hash);
 			
 			if (Utilities.IsThisSlotCrafting(blockId, blockMeta, event.slot.slotNumber))
 			{
-                MinecraftForge.EVENT_BUS.post(new EStatistic(new PlayerStatistic(0, 0, "players", "ItemsCrafted", event.player.username, stackSize, true)));
-				MinecraftForge.EVENT_BUS.post(new EStatistic(new BlockItemStatistic(0, 0, "bistats", "total", event.player.username, event.itemStack.itemID, Utilities.GetItemMetaDataValue(event.itemStack),
+                MinecraftForge.EVENT_BUS.post(new EStatistic(new PlayerStatistic(hash, 1, "players", "ItemsCrafted", event.player.username, stackSize, true)));
+				MinecraftForge.EVENT_BUS.post(new EStatistic(new BlockItemStatistic(hash + 1, 1, "bistats", "total", event.player.username, event.itemStack.itemID, Utilities.GetItemMetaDataValue(event.itemStack),
 						stackSize, Utilities.GetItemNBT(event.itemStack), "craft")));
 			}
 			else if (Utilities.IsThisSlotSmelting(blockId, blockMeta, event.slot.slotNumber)){
-                MinecraftForge.EVENT_BUS.post(new EStatistic(new PlayerStatistic(0, 0, "players", "ItemsSmelted", event.player.username, stackSize, true)));
-				MinecraftForge.EVENT_BUS.post(new EStatistic(new BlockItemStatistic(0, 0, "bistats", "total", event.player.username, event.itemStack.itemID, Utilities.GetItemMetaDataValue(event.itemStack),
+                MinecraftForge.EVENT_BUS.post(new EStatistic(new PlayerStatistic(hash, 1, "players", "ItemsSmelted", event.player.username, stackSize, true)));
+				MinecraftForge.EVENT_BUS.post(new EStatistic(new BlockItemStatistic(hash + 1, 1, "bistats", "total", event.player.username, event.itemStack.itemID, Utilities.GetItemMetaDataValue(event.itemStack),
                         stackSize, Utilities.GetItemNBT(event.itemStack), "smelt")));
 			}
 			
