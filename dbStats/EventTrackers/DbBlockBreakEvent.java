@@ -23,7 +23,7 @@ public class DbBlockBreakEvent {
             int hash = ("players:BlocksBroken:" + event.harvester.username + ":" + 1 + ":" + event.block.blockID + ":" + blockMeta + ":" + event.x + "" + event.y + "" + event.z).hashCode();
 
             MinecraftForge.EVENT_BUS.post(new EStatistic(new PlayerStatistic(hash, 1, "players", "BlocksBroken", event.harvester.username, 1, true)));
-            MinecraftForge.EVENT_BUS.post(new EStatistic(new BlockItemStatistic(hash, 1, "bistats", "total", event.harvester.username, event.block.blockID, blockMeta, 1, "", "break")));
+            MinecraftForge.EVENT_BUS.post(new EStatistic(new BlockItemStatistic(hash + 1, 1, "bistats", "total", event.harvester.username, event.block.blockID, blockMeta, 1, "", "break")));
         }
     }
 
@@ -38,7 +38,7 @@ public class DbBlockBreakEvent {
             int hash = ("players:BlocksBroken:" + event.player.username + ":" + 1 + ":" + blockId + ":" + blockMeta + ":" + event.blockX + "" + event.blockY + "" + event.blockZ).hashCode();
 
             MinecraftForge.EVENT_BUS.post(new EStatistic(new PlayerStatistic(hash, 0, "players", "BlocksBroken", event.player.username, 1, true)));
-			MinecraftForge.EVENT_BUS.post(new EStatistic(new BlockItemStatistic(hash, 0, "bistats", "total", event.player.username, blockId, blockMeta, 1, "", "break")));
+			MinecraftForge.EVENT_BUS.post(new EStatistic(new BlockItemStatistic(hash + 1, 0, "bistats", "total", event.player.username, blockId, blockMeta, 1, "", "break")));
 		}
 	}
 }

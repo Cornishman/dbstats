@@ -69,17 +69,18 @@ public class DatabaseQueue {
 	{
 		synchronized(statsQueue) {
             boolean match = false;
-            if (stat.priority > 0)
+            for(Statistic cStat : statsQueue)
             {
-                for(Statistic cStat : statsQueue)
+                //Compare the uidHash against the current queue, if a match is found override the statistic with the higher priority
+                if (cStat.uidHash == stat.uidHash)
                 {
-                    //Compare the uidHash against the current queue, if a match is found override the statistic with the higher priority
-                    if (cStat.uidHash == stat.uidHash && stat.priority > cStat.priority)
+                    match = true;
+                    if (stat.priority > cStat.priority)
                     {
                         cStat = stat;
-                        match = true;
-                        break;
                     }
+                    else { match = false; }
+                    break;
                 }
             }
 
