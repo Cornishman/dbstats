@@ -5,7 +5,6 @@ import dbStats.API.Statistics.EStatistic;
 import dbStats.Config;
 import dbStats.Statistics.BlockItemStatistic;
 import dbStats.Statistics.PlayerStatistic;
-import dbStats.Util.ErrorUtil;
 import dbStats.Util.TileEntityUtil;
 import dbStats.Util.Utilities;
 import net.minecraft.entity.player.InventoryPlayer;
@@ -44,8 +43,6 @@ public class DbPickupFromSlotEvent {
 
             int hash = ("craft:" + event.player.username + ":" + event.itemStack.itemID + ":" + Utilities.GetItemMetaDataValue(event.itemStack)
                     + ":" + stackSize + ":" + new SimpleDateFormat("ss").format(System.currentTimeMillis())).hashCode();
-
-            ErrorUtil.LogMessage("" + hash);
 			
 			if (Utilities.IsThisSlotCrafting(blockId, blockMeta, event.slot.slotNumber))
 			{

@@ -5,7 +5,6 @@ import dbStats.API.Statistics.EStatistic;
 import dbStats.Statistics.BlockItemStatistic;
 import dbStats.Statistics.PlayerStatistic;
 import dbStats.Util.ChatFormat;
-import dbStats.Util.ErrorUtil;
 import dbStats.Util.Utilities;
 import net.minecraft.util.ChatMessageComponent;
 import net.minecraftforge.common.MinecraftForge;
@@ -40,8 +39,6 @@ public class DbCraftEvent {
 
             int hash = ("craft:" + event.player.username + ":" + event.item.itemID + ":" + itemMeta
                     + ":" + event.amount + ":" + new SimpleDateFormat("ss").format(System.currentTimeMillis())).hashCode();
-
-            ErrorUtil.LogMessage("" + hash);
 			
 			MinecraftForge.EVENT_BUS.post(new EStatistic(new PlayerStatistic(hash, 0, "players", "ItemsCrafted", event.player.username, event.amount, true)));
 			MinecraftForge.EVENT_BUS.post(new EStatistic(new BlockItemStatistic(hash + 1, 0, "bistats", "total", event.player.username, event.item.itemID, itemMeta, event.amount, nbt, "craft")));
