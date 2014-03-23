@@ -42,6 +42,7 @@ public class Config {
 	public static boolean enableCraftingLogging;
 	public static boolean enableAttackLogging;
 	public static boolean enableHurtLogging;
+    public static boolean enableMiscLogging;
 	
 	public Config(File configFile)
 	{
@@ -368,6 +369,17 @@ public class Config {
 		{
 			trackDamage.set(enableAttackLogging);
 		}
+
+        Property trackMisc = config.get("Trackers", "misc", true);
+        if (loading)
+        {
+            enableMiscLogging = trackMisc.getBoolean(true);
+        }
+        else
+        {
+            trackMisc.set(enableMiscLogging);
+        }
+
 		//---------------------------------------------
 		
 		//Database info

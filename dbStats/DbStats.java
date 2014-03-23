@@ -75,6 +75,7 @@ public class DbStats {
 	public static DbEntityHurtEvent playerHurtTracker;
 	public static DbEntityAttackEvent playerAttackTracker;
 	public static DbPickupFromSlotEvent playerPickupSlotTracker;
+    public static DbMiscEvents playerMiscTracker;
 	
 	
 	public static Config config;
@@ -257,6 +258,11 @@ public class DbStats {
 			playerHurtTracker = new DbEntityHurtEvent();
 			MinecraftForge.EVENT_BUS.register(playerHurtTracker);
 		}
+        if (Config.enableMiscLogging)
+        {
+            playerMiscTracker = new DbMiscEvents();
+            MinecraftForge.EVENT_BUS.register(playerMiscTracker);
+        }
 	}
 	
 	private void unInitTrackers()
@@ -310,6 +316,11 @@ public class DbStats {
 		{
 			MinecraftForge.EVENT_BUS.unregister(playerHurtTracker);
 		}
+
+        if (playerMiscTracker != null)
+        {
+            MinecraftForge.EVENT_BUS.unregister(playerMiscTracker);
+        }
 	}
 	
 	private static void RegisterCommands(FMLServerStartingEvent event)
@@ -492,5 +503,13 @@ public class DbStats {
 				new Column("Gaseous", ColumnType.BOOLEAN, 0, false, "0", false, false, false)
 		};
 		MinecraftForge.EVENT_BUS.post(new Table("Fluids", columns, ""));
+
+        columns = new Column[]{
+                new Column("PlayerId", ColumnType.INT, 0, false, "0", true, false, false),
+                new Column("statname", ColumnType.VARCHAR, 30, false, "", false, false, false),
+                new Column("info1", ColumnType.VARCHAR, 30, false, "", false, false, false),
+                new Column("total", ColumnType.INT, 0, false, "0", false, false, false)
+        };
+        MinecraftForge.EVENT_BUS.post(new Table("misc", columns, "total"));
 	}
 }
